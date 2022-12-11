@@ -1,0 +1,42 @@
+.from-input {
+  color: white;
+  margin: 5px;
+  background-color: transparent;
+  display: flex;
+  flex-direction: row;
+  align-content: space-between;
+  justify-content: space-between;
+}
+
+.from-input label {
+  color: white;
+  font-weight: 500;
+  padding: 10px;
+  letter-spacing: 1px;
+  width: 200px;
+  text-align: left;
+  font-weight: 800;
+  text-shadow: 0 0 10px #0078f0, 0 0 10px #0034ca;
+  font-size: 18px;
+}
+
+.from-input input {
+  color: white;
+  margin-top: 5px;
+  width: 300px;
+  height: 30px;
+  border: none;
+  background-color: transparent;
+  font-size: 22px;
+  text-align: right;
+  font-weight: 800;
+  text-shadow: 0 0 10px #0078f0, 0 0 10px #0034ca;
+}
+
+.from-input:last-child input {
+  text-shadow: 0 0 10px #db147c, 0 0 10px purple;
+}
+
+.from-input input::placeholder {
+  color: white;
+}

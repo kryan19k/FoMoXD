@@ -1,0 +1,42 @@
+form {
+  display: flex;
+  justify-self: center;
+  align-self: center;
+  z-index: 2;
+}
+
+.from-inputs {
+  text-transform: uppercase;
+  position: relative;
+  padding: 5px;
+  border-radius: 5px;
+  color: white;
+  display: flex; 
+  flex-direction: column;
+  background-color: transparent;
+  align-content: space-between;
+  justify-content: space-between;
+  
+}
+
+.from-title {
+  margin: 10px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  font-size: 25px;
+}
+
+.from-actions {
+  margin: 20px;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+}
+.from-actions button {
+  padding: 10px 20px;
+  margin: 20px 0px 0 0;
+  background: var(--pop-color);
+  outline: none;
+  border: none;
+}

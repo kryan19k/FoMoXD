@@ -1,0 +1,81 @@
+.puff{
+  font-size: 10rem;
+  margin-bottom: -1.5rem;
+}
+
+.expired-notice {
+  text-align: center;
+  /* padding: 2rem ; */
+  /* border: 1px solid #ebebeb; */
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.expired-notice > span {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 10px #DB147C, 0 0 10px purple;
+}
+
+.expired-notice > p {
+  font-size: 1.1rem;
+  color: white;
+  text-shadow: 0 0 10px #0078f0, 0 0 10px #0034ca;
+/*   margin-top: 0.5rem;
+ */}
+
+.show-counter {
+  padding: 0.5rem;
+}
+
+.show-counter .countdown-link {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  font-size: 3rem;
+  line-height: 1.75rem;
+  /* border: 1px solid #ebebeb; */
+  border-radius: 0.25rem;
+  text-decoration: none;
+  color: white;
+  text-shadow: 0 0 10px #DB147C, 0 0 10px purple;
+}
+
+.show-counter .countdown {
+  line-height: 1.25rem;
+  padding: 0 0.75rem 0 0.75rem;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.show-counter .countdown.danger {
+  color: yellow;
+}
+
+.show-counter .countdown > p {
+  margin: 1.5rem  .2rem;
+}
+
+.show-counter .countdown > span {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+
+.floating{
+  transform: translateY(-1%);
+  animation: floater .5s infinite;
+  transition: ease 0.5s
+}
+
+@keyframes floater {
+  0%{transform: translateY(-1%);transition: ease 0.5s;}
+  50%{transform: translateY(1%);transition: ease 0.5s;}
+}

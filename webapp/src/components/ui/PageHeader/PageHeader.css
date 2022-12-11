@@ -1,0 +1,29 @@
+.page-header {
+  /* background: rgb(237, 237, 237); */
+  padding: 25px 25px;
+  display: flex;
+  justify-content: center;
+}
+
+.page-title {
+  font-style: normal;
+  font-weight: 750;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  letter-spacing: 1.6px;
+  color: white;
+  text-shadow: 0 0 10px #0078f0, 0 0 10px #0034ca;
+}
+
+.buy-button {
+  background-color: #0034ca;
+  border-radius: 5px;
+  padding: 10px;
+}
+.buy-button:hover {
+  background-color: #0034ca;
+  transform: scale(1.2);
+  box-shadow: 0 0 10px #0078f0, 0 0 10px #0034ca;
+}
