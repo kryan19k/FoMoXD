@@ -57,8 +57,7 @@ export const GameContext = createContext({
 });
 
 export default function GameProvider(props: any) {
-  const { gameContract, web3, hooks } = useWeb3();
-  const { account } = hooks.useAccount();
+  const { gameContract, web3, account } = useWeb3();
   const [roundId, setRoundId] = useState(0);
   const [wantXPuffs, setWantXPuffs] = useState(0);
   const [puffsToETH, setPuffsToETH] = useState(0);
@@ -81,16 +80,12 @@ export default function GameProvider(props: any) {
     affiliateVault: 0
   });
   const [activeTeamIndex, setActiveTeamIndex] = useState(0);
-  const helper = new GameHelper(gameContract, web3, account.data);
+  const helper = new GameHelper(gameContract, web3, account);
 
   useEffect(() => {
-    if (!gameContract || !web3 || !account) {
-      Toast.fire({
-        icon: 'error',
-        title: `🦊 Fail to load web3. Please reload.`
-      });
-    } else {
-      const timer = setTimeout(async () => {
+    const timer = setInterval(async () => {
+      if (!endTime) {
+        console.log('🤫', endTime, account);
         const newRoundId = await gameContract?.methods?.roundID_().call();
         setRoundId(newRoundId);
         await fetchNewRound(newRoundId);
@@ -106,6 +101,7 @@ export default function GameProvider(props: any) {
             // }
           })
           .on('data', async (event: any) => {
+            console.log(event);
             await fetchNewRound(roundId);
           });
 
@@ -124,11 +120,11 @@ export default function GameProvider(props: any) {
               title: `⏳ New End Time.`
             });
           });
-      }, 0);
+      }
+    }, 1000);
 
-      return () => clearInterval(timer);
-    }
-  }, [web3, gameContract]);
+    return () => clearInterval(timer);
+  }, [web3, gameContract, endTime]);
 
   async function fetchPlayerRoundData(_roundId: number, accountAddress: string) {
     const playerId = await gameContract?.methods?.playerIDxAddr_(accountAddress).call();
@@ -141,9 +137,10 @@ export default function GameProvider(props: any) {
 
   async function fetchNewRound(_roundId: number) {
     const r = await gameContract?.methods?.roundData_(_roundId).call();
-    await fetchPlayerRoundData(_roundId, account.data);
+    console.log('fetchNewRound~', r, account, new Date(r.endTime * 1000).toLocaleTimeString());
+    await fetchPlayerRoundData(_roundId, account);
     setRoundData(r);
-    setEndTime(r.endTime ? r.endTime * 1000 : 0);
+    setEndTime(r.endTime * 1000);
   }
 
   const value = {

@@ -23,7 +23,7 @@ body {
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  background-image: url('../assets/retro-city-sunset-digital-art.jpg');
+  background-image: url('../public/retro-city-sunset-digital-art.jpg');
   /* photo credit: https://wallpapersmug.com/w/download/1920x1080/retro-city-sunset-digital-art-c6637f27302 */
   height: 1050px;
 }

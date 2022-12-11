@@ -90,16 +90,6 @@ export default class GameHelper {
     await this.gameContract.methods
       ?.buyPuffXAddr(activeTeamIndex - 1)
       .send({ from: this.account, value: this.web3.utils.toWei(puffsToETH, 'ether') })
-      .on('error', function (error: any) {
-        alert(error);
-      })
-      .on('receipt', function (receipt: any) {
-        console.log(receipt); // contains the new contract address
-      })
-      .on('confirmation', function (confirmationNumber: any, receipt: any) {})
-      .then(function (newContractInstance: any) {
-        console.log('newContractInstance???', newContractInstance); // instance with the new contract address
-      })
       .then((receipt: any) => {
         console.log('events-->', receipt?.events);
         console.log('events.returnValues-->', receipt?.events[0]?.returnValues);
@@ -115,8 +105,11 @@ export default class GameHelper {
         });
       })
       .catch((e: any) => {
-        console.log('e????', e);
-        alert(e);
+        console.log('buy e????', e);
+        Toast.fire({
+          icon: 'error',
+          title: `Fail to withdraw.`
+        });
       });
   }
 
@@ -124,9 +117,6 @@ export default class GameHelper {
     await this.gameContract.methods
       ?.withdraw()
       .send({ from: this.account })
-      .on('error', function (error: any) {
-        alert(error);
-      })
       .then(function (receipt: any) {
         Toast.fire({
           icon: 'success',
@@ -142,7 +132,6 @@ export default class GameHelper {
           icon: 'error',
           title: `Fail to withdraw.`
         });
-        alert(e);
       });
   }
 }

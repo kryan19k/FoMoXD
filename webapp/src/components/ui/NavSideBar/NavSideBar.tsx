@@ -1,6 +1,5 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import NewItemFrom from '../NewItemFrom/NewItemFrom';
 import { NavSideBarDiv } from './style';
 import { MetaMaskInpageProvider } from '@metamask/providers';
 import Swal from 'sweetalert2';
@@ -30,16 +29,7 @@ const NavSideBar = (props: any) => {
   const { account } = hooks.useAccount();
   const { roundData, roundId, endTime, setRoundId, fetchNewRound } = useGameData();
   const soundContext = useSound();
-  console.log(
-    'new Date(endTime * 1000).toLocaleTimeString()',
-    endTime,
-    new Date(endTime).toLocaleTimeString()
-  );
 
-  let [isShow, setIsShow] = useState(false);
-  const toggleIsShow = () => {
-    setIsShow(!isShow);
-  };
   const onSubmit = (enterDeviceData: any) => {
     props.onSubmit(enterDeviceData);
   };
@@ -185,7 +175,6 @@ const NavSideBar = (props: any) => {
           </div>
         </div>
       </NavSideBarDiv>
-      <NewItemFrom onClick={toggleIsShow} isShow={isShow} onSubmit={onSubmit}></NewItemFrom>
     </Fragment>
   );
 };

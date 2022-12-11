@@ -1,4 +1,5 @@
 import { useContext, useEffect, useRef, useState, useReducer, createContext, useMemo } from 'react';
+import { ReactSoundProps } from 'react-sound';
 // @ts-ignore
 window.soundManager.setup({ debugMode: false });
 

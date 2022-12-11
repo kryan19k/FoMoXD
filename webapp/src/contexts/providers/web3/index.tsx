@@ -4,12 +4,14 @@ import Swal from 'sweetalert2';
 import Web3 from 'web3';
 import { setupHooks } from './hooks/setupHooks';
 import { loadContractWithAddress } from '../../../utils/loadContract';
-import { ReactSoundProps } from 'react-sound';
+import config from '../../../config';
+const { FOMO_CONTRACT_ADDRESS, RPC_URL } = config;
 
 const Web3Context = createContext(null);
 
 interface Web3State {
   web3: any;
+  account: string;
   hooks?: any;
   provider: any;
   isLoading: any;
@@ -30,40 +32,48 @@ const Toast = Swal.mixin({
   }
 });
 const createWeb3State = (props: Web3State) => {
-  const { web3, provider, isLoading, gameContract } = props;
+  const { web3, provider, isLoading, gameContract, account } = props;
   return {
     web3,
     provider,
     gameContract,
     isLoading,
-    hooks: setupHooks(web3, provider)
+    hooks: setupHooks(web3, provider),
+    account
   };
 };
 
+let lastAcoount = '';
 export default function Web3Provider(props: any) {
   const { children } = props;
+  const [nowAccount, setAccount] = useState('');
   const [web3Api, setWeb3Api] = useState(
     createWeb3State({
-      web3: null,
-      provider: null,
-      factoryContract: null,
-      isLoading: true
+      web3: undefined,
+      provider: undefined,
+      factoryContract: undefined,
+      isLoading: true,
+      account: nowAccount
     })
   );
+  const contractAddress = FOMO_CONTRACT_ADDRESS;
 
   useEffect(() => {
+    let timer: any;
     const loadProvider = async () => {
-      const contractAddress = '0x0165878A594ca255338adfa4d48449f69242Eb8F';
-      const RPC_URL = 'http://127.0.0.1:8545';
-      // const metamaskProvider = window.ethereum;
       const provider =
         ((await detectEthereumProvider()) as any) || new Web3.providers.HttpProvider(RPC_URL);
       const web3 = new Web3(provider);
       const gameContract = await loadContractWithAddress('FoMoXD', contractAddress, web3);
-      if (!gameContract || !web3) {
+      const [newAccount] = await web3.eth.getAccounts();
+      setAccount(newAccount);
+      lastAcoount = newAccount;
+      if (!gameContract || !newAccount?.length) {
         Swal.fire({
           icon: 'info',
-          title: 'Fail to connect to FoMoXD',
+          title: newAccount?.length
+            ? 'Fail to connect to account'
+            : 'Fail to connect to FoMoXD Contract',
           showCancelButton: true,
           confirmButtonText: 'Reload',
           width: 600,
@@ -81,10 +91,25 @@ export default function Web3Provider(props: any) {
             Swal.fire('Saved!', '', 'success');
             window.location.reload();
           } else if (result.isDenied) {
-            Swal.fire('Fail to connect to FoMoXD', '', 'info');
+            Swal.fire('OK', '', 'info');
           }
         });
+      } else {
+        setWeb3Api(
+          createWeb3State({
+            web3,
+            gameContract,
+            provider,
+            account: newAccount,
+            isLoading: false
+          })
+        );
+        Toast.fire({
+          icon: 'success',
+          title: 'Connected to Metamask.'
+        });
       }
+
       // await hre.ethers.getContractAt("FoMoXD", "0x742489F22807ebB4C36ca6cD95c3e1C044B7B6c8");
       // gameContract.filters.Transfer(account, null);
       // const fromMe = gameContract.filters.Transfer(account, null);
@@ -99,45 +124,29 @@ export default function Web3Provider(props: any) {
       //   // queryTokenBalance(window)
       // });
 
-      const [account] = await web3.eth.getAccounts();
-      if (provider) {
-        setWeb3Api(
-          createWeb3State({
-            web3,
-            gameContract,
-            provider,
-            isLoading: false
-          })
-        );
-        Toast.fire({
-          icon: 'success',
-          title: 'Connected to Metamask.'
-        });
-      } else if (!account) {
-        setWeb3Api((api) => ({
-          ...api,
-          isLoading: false
-        }));
-        Toast.fire({
-          icon: 'error',
-          title: 'Please, install Metamask.'
-        });
-      } else {
-        setWeb3Api((api) => ({
-          ...api,
-          isLoading: false
-        }));
-        Toast.fire({
-          icon: 'error',
-          title: 'Please, install Metamask.'
-        });
-      }
+      timer = setInterval(async () => {
+        const [newAccount] = await web3.eth.getAccounts();
+        if (lastAcoount !== newAccount) {
+          lastAcoount = newAccount;
+          setAccount(newAccount);
+          Toast.fire({
+            icon: 'success',
+            title: 'Connected to Metamask.'
+          });
+          setWeb3Api((api) => ({
+            ...api,
+            account: newAccount
+          }));
+        }
+      }, 5000);
     };
+
     loadProvider();
+    return () => clearInterval(timer);
   }, []);
 
   const _web3Api = useMemo(() => {
-    const { web3, provider, isLoading } = web3Api;
+    const { web3, provider, isLoading, account: lastAccount } = web3Api;
     return {
       ...web3Api,
       isWeb3Loaded: web3 != null,
@@ -181,7 +190,7 @@ export default function Web3Provider(props: any) {
             });
           }
     };
-  }, [web3Api]);
+  }, [web3Api, nowAccount]);
 
   return (
     // @ts-ignore

@@ -30,6 +30,9 @@ async function main() {
     2
   );
   console.log(`[Community] Deployed to ${community.address}`);
+  /* ----------------------- Oracle ----------------------- */
+  const NumOracle = await ethers.getContractFactory("SimpleNumOracle");
+  const numOracle = await NumOracle.deploy(1);
   /* ----------------------- FoMoXD ----------------------- */
   const FoMoXD = await ethers.getContractFactory("FoMoXD");
   const foMoXD = await FoMoXD.deploy(
@@ -37,7 +40,8 @@ async function main() {
     community.address,
     foMoERC20.address,
     foMoERC721.address,
-    divies.address
+    divies.address,
+    numOracle.address
   );
   console.log(`[FoMoXD] Deployed to ${foMoXD.address}`);
 
@@ -46,11 +50,14 @@ async function main() {
     community.address,
     foMoERC20.address,
     foMoERC721.address,
-    divies.address
+    divies.address,
+    numOracle.address
   );
   console.log(`[Other FoMoXD] Deployed to ${otherFoMo.address}`);
+  /* ---------------------- set fomo ---------------------- */
   await foMoXD.setOtherFomo(otherFoMo.address);
-
+  await numOracle.setFoMoGame(foMoXD.address);
+  await foMoERC721.setFoMoGame(foMoXD.address);
   // TODO: Just For testing
   await foMoXD.activate();
 }

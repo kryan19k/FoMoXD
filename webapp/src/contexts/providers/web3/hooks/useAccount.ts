@@ -1,11 +1,11 @@
-import React from "react";
+import React from 'react';
 
 // SWR
-import useSWR from "swr";
+import useSWR from 'swr';
 
-export const handler = (web3:any, provider:any) => () => {
+export const handler = (web3: any, provider: any) => () => {
   const { data, mutate, ...rest } = useSWR(
-    () => (web3 ? "web3/accounts" : null),
+    () => (web3 ? 'web3/accounts' : null),
     async () => {
       const accounts = await web3.eth.getAccounts();
       return accounts[0];
@@ -14,7 +14,7 @@ export const handler = (web3:any, provider:any) => () => {
 
   React.useEffect(() => {
     provider &&
-      provider.on("accountsChanged", (accounts: string[]) => {
+      provider.on('accountsChanged', (accounts: string[]) => {
         mutate(accounts[0] ?? null);
       });
   }, [mutate]);
@@ -23,7 +23,7 @@ export const handler = (web3:any, provider:any) => () => {
     account: {
       data,
       mutate,
-      ...rest,
-    },
+      ...rest
+    }
   };
 };
