@@ -79,12 +79,12 @@ const CountdownTimer = (props: any) => {
   if (props.isGameEnd) {
     return <ExpiredNotice getTime={true} isGameEnd={props.isGameEnd} />;
   } else {
-    if (props.targetDate > 0) {
-      return <ExpiredNotice getTime={true} isGameEnd={props.isGameEnd} />;
+    if (props.targetDate > 0 && minutes > 0) {
+      return <ShowCounter days={days} hours={hours} minutes={minutes} seconds={seconds} />;
     } else if (props.targetDate <= 0) {
       return <ExpiredNotice getTime={false} isGameEnd={props.isGameEnd} />;
     } else {
-      return <ShowCounter days={days} hours={hours} minutes={minutes} seconds={seconds} />;
+      return <ExpiredNotice getTime={true} isGameEnd={props.isGameEnd} />;
     }
   }
 };

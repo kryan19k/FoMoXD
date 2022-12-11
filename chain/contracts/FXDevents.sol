@@ -34,5 +34,9 @@ contract FXDevents {
 
     event onEthAirdrop(uint256 indexed playerID, uint256 prize);
 
-    event onNftAirdrop(address indexed playerAddr, uint256 mintAmount);
+    event onNftAirdrop(
+        uint256 indexed roundId,
+        address indexed playerAddr,
+        uint256 mintAmount
+    );
 }

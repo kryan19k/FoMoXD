@@ -73,7 +73,7 @@ const Tabs = (props: any) => {
                 type="number"
                 id="keys-field"
                 className="form-control"
-                value={wantXPuffs || 0}
+                value={Number(wantXPuffs) || 0}
                 onChange={async (e: any) => {
                   new Audio('/sounds/coin.wav').play();
                   updatePuffsAndETH(e.target.value);
@@ -86,7 +86,7 @@ const Tabs = (props: any) => {
                 disabled={true}
                 onClick={(e: any) => {
                   new Audio('/sounds/coin.wav').play();
-                  updatePuffsAndETH(wantXPuffs + 100);
+                  updatePuffsAndETH(Number(wantXPuffs) + 100);
                 }}
               />
             </div>
@@ -96,7 +96,7 @@ const Tabs = (props: any) => {
                 className="btn btn-outline-warning"
                 onClick={async (e: any) => {
                   new Audio('/sounds/coin.wav').play();
-                  updatePuffsAndETH(wantXPuffs + 1);
+                  updatePuffsAndETH(Number(wantXPuffs) + 1);
                 }}>
                 + 1 Puff
               </button>
@@ -105,7 +105,7 @@ const Tabs = (props: any) => {
                 className="btn btn-outline-warning"
                 onClick={async (e: any) => {
                   new Audio('/sounds/coin.wav').play();
-                  updatePuffsAndETH(wantXPuffs + 2);
+                  updatePuffsAndETH(Number(wantXPuffs) + 2);
                 }}>
                 + 2 Puffs
               </button>
@@ -114,7 +114,7 @@ const Tabs = (props: any) => {
                 className="increment-button btn btn-outline-warning"
                 onClick={async (e: any) => {
                   new Audio('/sounds/coin.wav').play();
-                  updatePuffsAndETH(wantXPuffs + 5);
+                  updatePuffsAndETH(Number(wantXPuffs) + 5);
                 }}>
                 <div>+</div>5
               </button>
@@ -123,7 +123,7 @@ const Tabs = (props: any) => {
                 className="increment-button btn btn-outline-warning"
                 onClick={async (e: any) => {
                   new Audio('/sounds/coin.wav').play();
-                  updatePuffsAndETH(wantXPuffs + 10);
+                  updatePuffsAndETH(Number(wantXPuffs) + 10);
                 }}>
                 <div>+</div>10
               </button>
@@ -132,7 +132,7 @@ const Tabs = (props: any) => {
                 className="increment-button btn btn-outline-warning"
                 onClick={(e: any) => {
                   new Audio('/sounds/coin.wav').play();
-                  updatePuffsAndETH(wantXPuffs + 100);
+                  updatePuffsAndETH(Number(wantXPuffs) + 100);
                 }}>
                 <div>+</div>100
               </button>

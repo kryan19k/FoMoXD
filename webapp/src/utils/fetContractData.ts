@@ -18,10 +18,27 @@ export default class GameHelper {
   gameContract: any;
   web3: any;
   account: any;
-  constructor(gameContract: any, web3: any, account: any) {
+  setPlayerData: any;
+  setEndTime: any;
+  setRoundData: any;
+  roundId: number;
+  constructor(opt: {
+    gameContract: any;
+    web3: any;
+    account: any;
+    setPlayerData: any;
+    setEndTime: any;
+    setRoundData: any;
+    roundId: number;
+  }) {
+    const { gameContract, web3, account, setPlayerData, setEndTime, setRoundData, roundId } = opt;
     this.gameContract = gameContract;
     this.web3 = web3;
     this.account = account;
+    this.setPlayerData = setPlayerData;
+    this.setEndTime = setEndTime;
+    this.setRoundData = setRoundData;
+    this.roundId = roundId;
   }
   async buyPuffs(opt: { activeTeamIndex: number; puffsToETH: number; wantXPuffs: any }) {
     const { wantXPuffs, activeTeamIndex, puffsToETH } = opt;
@@ -108,7 +125,7 @@ export default class GameHelper {
         console.log('buy e????', e);
         Toast.fire({
           icon: 'error',
-          title: `Fail to withdraw.`
+          title: `🧁 Fail to Buy Puffs.`
         });
       });
   }
@@ -130,7 +147,64 @@ export default class GameHelper {
         console.log('withdraw e????', e);
         Toast.fire({
           icon: 'error',
-          title: `Fail to withdraw.`
+          title: `🤡 Fail to withdraw.`
+        });
+      });
+  }
+
+  async fetchPlayerRoundData(_roundId: number) {
+    const playerId = await this.gameContract?.methods?.playerIDxAddr_(this.account).call();
+    const newPlayerData = await this.gameContract?.methods?.player_(playerId).call();
+    const newPlayerRoundData = await this.gameContract?.methods
+      ?.playerRoundsData_(playerId, _roundId)
+      .call();
+    this.setPlayerData({ ...newPlayerRoundData, ...newPlayerData });
+  }
+
+  async fetchNewRound(_roundId: number) {
+    const r = await this.gameContract?.methods?.roundData_(_roundId).call();
+    console.log(
+      'fetchNewRound~',
+      _roundId,
+      r,
+      this.account,
+      new Date(r.endTime * 1000).toLocaleTimeString()
+    );
+    await this.fetchPlayerRoundData(_roundId);
+    this.setRoundData(r);
+    this.setEndTime(r.endTime * 1000);
+  }
+
+  async initEventListener() {
+    this.gameContract.events
+      .allEvents({
+        // filter: {
+        //   from: [
+        //     // 🥵 it doesn't work...
+        //     '0x00000000AE347930bD1E7B0F35588b92280f9e75',
+        //     '0x8EB871bbB6F754a04bCa23881A7D25A30aAD3f23',
+        //     '0xc2A856c3afF2110c1171B8f942256d40E980C726'
+        //   ]
+        // }
+      })
+      .on('data', async (event: any) => {
+        console.log('✅ New Events!', this.roundId, event);
+        await this.fetchNewRound(this.roundId);
+      });
+
+    this.gameContract.events
+      .NewEndTime()
+      .on('data', (event: any) => {
+        Toast.fire({
+          icon: 'success',
+          title: `⏳ New End Time.`
+        });
+        this.setEndTime(+event?.returnValues?.timeStamp * 1000);
+      })
+      .on('error', function (error: any, receipt: any) {
+        Toast.fire({
+          icon: 'error',
+          title: `⏳ New End Time.`
         });
       });
   }
