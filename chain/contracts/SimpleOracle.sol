@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
-import "./FoMoXD.sol";
+import "./interface/INumOracle.sol";
 import "hardhat/console.sol";
 
 /**
@@ -18,8 +18,8 @@ import "hardhat/console.sol";
  * DO NOT USE THIS CODE IN PRODUCTION.
  */
 
-contract SimpleNumOracle is NumOracle, VRFConsumerBaseV2, ConfirmedOwner {
-    FoMoXD public FoMoXD_;
+contract SimpleNumOracle is INumOracle, VRFConsumerBaseV2, ConfirmedOwner {
+    address public FoMoXD_;
     uint256 requestId_; // mock chain link request id
     uint256 public airDropTracker_ = 0; // incremented each time a "qualified" tx occurs.  used to determine winning air drop
     uint256 public airERC721Tracker_ = 0;
@@ -85,7 +85,7 @@ contract SimpleNumOracle is NumOracle, VRFConsumerBaseV2, ConfirmedOwner {
         s_subscriptionId = subscriptionId;
     }
 
-    function setFoMoGame(FoMoXD _FoMoXD) external onlyOwner {
+    function setFoMoGame(address _FoMoXD) external onlyOwner {
         FoMoXD_ = _FoMoXD;
     }
 

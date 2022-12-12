@@ -1,9 +1,11 @@
 # 🧁 FoMoXD
 
-# Steps for test
+## Steps for test
 
-- Run the hardhat node, add the network to Metamak
+- Run the hardhat node
+- Add the test network and account to Metamak
 - Deploy contracts with Hardhat
+- Update Contract Address in config file
 - Run the web server with docker
 
 ```
@@ -69,6 +71,7 @@ flowchart LR
 # Credit
 - NFT Images
   - <https://giventofly.github.io/pixelit/>
+- [JillyPuff](https://twitter.com/scrixels/status/1136653042642817024)
 
 ## Music Credit
 -  Background

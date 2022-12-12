@@ -10,7 +10,7 @@ export const SoundContext = createContext({
 
 export default function SoundProvider(props: any) {
   const { children } = props;
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const value = { isPlaying, setIsPlaying };
   return <SoundContext.Provider value={value}>{children}</SoundContext.Provider>;
 }

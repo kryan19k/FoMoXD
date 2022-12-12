@@ -5,14 +5,14 @@ import "./interface/IDivies.sol";
 import "./interface/IOtherFoMoXD.sol";
 import "./interface/ICommunity.sol";
 import "./interface/IPlayerBook.sol";
+import "./interface/IFoMoERC721.sol";
+import "./interface/IPXD.sol";
+import "./interface/INumOracle.sol";
 
 import "./library/FXDPuffsCalc.sol";
 import "./library/FXDdatasets.sol";
 
 import "./FXDevents.sol";
-import "./FoMoERC721.sol";
-import "./NumOracle.sol";
-import "./PXD.sol";
 
 import "hardhat/console.sol";
 
@@ -23,11 +23,11 @@ contract FoMoXD is FXDevents {
     /* ------------------------------------------------------ */
     IPlayerBook public PlayerBook_;
     ICommunity public Community_;
-    FoMoERC20 public FoMoERC20_;
-    FoMoERC721 public FoMoERC721_;
+    IPXD public FoMoERC20_;
+    IFoMoERC721 public FoMoERC721_;
     IDivies public Divies_;
     IOtherFoMoXD public OtherFXD_;
-    NumOracle public Oracle_;
+    INumOracle public Oracle_;
     /* ------------------------------------------------------ */
     /*                      CONFIGURATION                     */
     /* ------------------------------------------------------ */
@@ -109,10 +109,10 @@ contract FoMoXD is FXDevents {
     constructor(
         IPlayerBook _playerBook,
         ICommunity _community,
-        FoMoERC20 _foMoERC20,
-        FoMoERC721 _foMoERC721,
+        IPXD _foMoERC20,
+        IFoMoERC721 _foMoERC721,
         IDivies _divies,
-        NumOracle _oracle
+        INumOracle _oracle
     ) {
         PlayerBook_ = _playerBook;
         Community_ = _community;
@@ -350,6 +350,8 @@ contract FoMoXD is FXDevents {
             Divies_.deposit{value: _pXdShare}();
         }
 
+        // reveal round nft
+        // FoMoERC721_.toggleRoundReveal(roundID_);
         // start next round
         roundID_++;
         _rID++;

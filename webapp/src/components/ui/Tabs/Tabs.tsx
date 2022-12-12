@@ -17,15 +17,23 @@ const Toast = Swal.mixin({
 });
 const Tabs = (props: any) => {
   const { gameContract } = useWeb3();
-  const { playerData, roundData, setWantXPuffs, wantXPuffs, puffsToETH, setPuffsToETH, withdraw } =
-    props;
+  const {
+    playerData,
+    roundId,
+    roundData,
+    setWantXPuffs,
+    wantXPuffs,
+    puffsToETH,
+    setPuffsToETH,
+    withdraw
+  } = props;
   if (!gameContract) {
     Toast.fire({
       icon: 'error',
       title: `🦊 Fail to load web3. Please reload.`
     });
   }
-
+  console.log('playerData🦊🦊', playerData);
   const [activeTabIndex, setActiveTabIndex] = useState(1);
 
   const handleTabClick = (index: number) => {
@@ -59,6 +67,7 @@ const Tabs = (props: any) => {
         </div>
         <div className="panels">
           <div className={`panel ${checkActive(1, 'active')}`}>
+            <p>roundId:{roundId}</p>
             <p>
               Purchases of .1 ETH or more have a 1% chance to win some of the 0 BNB airdrop pot,
               instantly!

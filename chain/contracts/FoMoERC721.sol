@@ -9,7 +9,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./FoMoXD.sol";
 
 contract FoMoERC721 is
     Initializable,
@@ -20,7 +19,7 @@ contract FoMoERC721 is
     /* ------------------------------------------------------ */
     /*                        CONTRACTS                       */
     /* ------------------------------------------------------ */
-    FoMoXD public FoMoXD_;
+    address public FoMoXD_;
     /* ------------------------------------------------------ */
     /*                        LIBRARIES                       */
     /* ------------------------------------------------------ */
@@ -56,31 +55,41 @@ contract FoMoERC721 is
         _;
     }
     modifier onlyFoMoXD() {
-        require(msg.sender == address(FoMoXD_), "only team just can activate");
+        require(
+            msg.sender == address(FoMoXD_) || msg.sender == owner(),
+            "only fomo pls..."
+        );
         _;
     }
 
+    modifier onlyOwner() {
+        require(owner() == msg.sender, "not owner");
+        _;
+    }
     /* ------------------------------------------------------ */
     /*                      CONFIGURABLES                     */
     /* ------------------------------------------------------ */
     Counters.Counter private nextTokenId_;
     uint256 public price_; // price for each token
     uint256 public maxSupply_;
-    bool public mintActive;
-    bool public earlyMintActive;
-    bool public revealed; // reveal mystery box or not
     uint256 public earlyMintMaxBalance;
     uint256 public ownerMaxBalance;
     uint256 public userMaxBalance;
     uint256 public maxMintPerTx;
+    bool public mintActive;
+    bool public earlyMintActive;
     /* ------------------------------------------------------ */
     /*                        DATASETS                        */
     /* ------------------------------------------------------ */
-    string public baseURI;
-    string private _mysteryTokenURI; // mystery box image URL
+    // bool public revealed; // reveal mystery box or not
+    //string private baseURI;
+    string public mysteryTokenURI_; // mystery box image URL
+    mapping(uint256 => bool) public roundIsReveal_;
+    mapping(uint256 => string) private roundBaseURI_;
+    mapping(uint256 => string) public roundMysteryTokenURI;
     bytes32 public merkleRoot; // whitelist root
     mapping(address => uint256) public whiteListClaimed; // whitelist token amounts which already cliameded
-    mapping(uint256 => string) private _tokenURIs;
+    mapping(uint256 => string) private _tokenURIs; // TODO:
     mapping(address => uint256) public balance;
 
     /**
@@ -97,23 +106,25 @@ contract FoMoERC721 is
     function initialize(
         string memory _name,
         string memory _symbol
-    ) public initializer {
+    )
+        public
+        // string memory _mysteryTokenURI
+        initializer
+    {
         __ERC721_init(_name, _symbol);
         __Ownable_init();
         price_ = 0.01 ether;
         maxSupply_ = 50;
-        mintActive = false;
-        earlyMintActive = false;
-        revealed = false;
         earlyMintMaxBalance = 3;
         ownerMaxBalance = 20;
         userMaxBalance = 10;
         maxMintPerTx = 5;
+        // mysteryTokenURI_ = _mysteryTokenURI;
     }
 
-    /*=======================================
-   =            PUBLIC FUNCTIONS            =
-   =======================================*/
+    /* ------------------------------------------------------ */
+    /*                    PUBLIC FUNCTIONS                    */
+    /* ------------------------------------------------------ */
     /**
      * @notice return current total NFT being minted
      */
@@ -124,11 +135,12 @@ contract FoMoERC721 is
     /**
      * @notice See {IERC721Metadata-tokenURI}.
      */
-    function tokenURI(
+    function getRoundTokenURI(
+        uint256 roundId,
         uint256 tokenId
-    ) public view virtual override returns (string memory) {
-        _requireMinted(tokenId);
-        if (revealed) {
+    ) public view virtual returns (string memory) {
+        _requireMinted(tokenId); // check if exist
+        if (roundIsReveal_[roundId]) {
             string memory baseURI = _baseURI();
             return
                 bytes(baseURI).length > 0
@@ -141,7 +153,7 @@ contract FoMoERC721 is
                     )
                     : "";
         } else {
-            return _mysteryTokenURI;
+            return mysteryTokenURI_;
         }
     }
 
@@ -179,7 +191,7 @@ contract FoMoERC721 is
     function foMoXDMint(
         address to,
         uint256 _mintAmount
-    ) public payable onlyFoMoXD returns (uint256[] memory) {
+    ) external payable onlyFoMoXD returns (uint256[] memory) {
         uint256 _tokenId = nextTokenId_.current();
         require(
             _tokenId + _mintAmount < maxSupply_,
@@ -234,29 +246,32 @@ contract FoMoERC721 is
         price_ = _price;
     }
 
-    function setBaseURI(string calldata _newBaseURI) external onlyOwner {
-        baseURI = _newBaseURI;
+    function setNftRoundBaseURI(
+        uint256 _roundId,
+        string calldata _newBaseURI
+    ) external onlyOwner {
+        roundBaseURI_[_roundId] = _newBaseURI;
     }
 
     function setMysteryTokenURI(
         string calldata _newmysteryTokenURI
     ) external onlyOwner {
-        _mysteryTokenURI = _newmysteryTokenURI;
+        mysteryTokenURI_ = _newmysteryTokenURI;
     }
 
     function toggleMintActive() external onlyOwner {
         mintActive = !mintActive;
     }
 
-    function toggleReveal() external onlyOwner {
-        revealed = !revealed;
+    function toggleRoundReveal(uint256 roundId) external onlyFoMoXD {
+        roundIsReveal_[roundId] = !roundIsReveal_[roundId];
     }
 
     function toggleEarlyMint() external onlyOwner {
         earlyMintActive = !earlyMintActive;
     }
 
-    function setFoMoGame(FoMoXD _FoMoXD) external onlyOwner {
+    function setFoMoGame(address _FoMoXD) external onlyOwner {
         FoMoXD_ = _FoMoXD;
     }
 
@@ -279,19 +294,13 @@ contract FoMoERC721 is
         nextTokenId_._value = tokenId;
     }
 
-    /**
-     *  @notice return the NFT base URI
-     *  ex: image base url...
-     */
-    function _baseURI() internal view virtual override returns (string memory) {
-        return baseURI;
+    function _roundBaseURI(
+        uint256 roundId
+    ) internal view returns (string memory) {
+        return roundBaseURI_[roundId];
     }
 
-    /**
-     *  @notice return mystry box image
-     *  ex: mystry box image url...
-     */
     function _getMysteryTokenURI() internal view returns (string memory) {
-        return _mysteryTokenURI;
+        return mysteryTokenURI_;
     }
 }

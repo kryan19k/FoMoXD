@@ -11,7 +11,10 @@ const NftsPage = () => {
   const { playerData } = game;
   console.log('game~', game);
   console.log('playerData~', playerData.nfts);
-  const nfts = localStorage.getItem('nfts');
+  let nfts = localStorage.getItem('nfts');
+  if (playerData.nfts) {
+    // TODO: 要 NFT 的 Metadata
+  }
 
   return (
     <Fragment>

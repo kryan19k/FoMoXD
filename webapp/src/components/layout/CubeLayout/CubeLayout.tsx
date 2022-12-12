@@ -2,7 +2,8 @@ import { useState } from 'react';
 import CubeNft from '../../ui/CubeNft/CubeNft';
 import PageHeader from '../../ui/PageHeader/PageHeader';
 import { MainNft } from '../../ui/CubeNft/style';
-import DetailBoard from '../../ui/DetailBoard/DetailBoard';
+import config from '../../../config';
+const { NFT_BASE_URL } = config;
 
 const CubeLayout = (props: any) => {
   const noDevices = <p>Not devices</p>;
@@ -13,6 +14,7 @@ const CubeLayout = (props: any) => {
         <div className="App-page-body">
           <PageHeader title={props.title}></PageHeader>
           <MainNft url={devices[0].url}>
+            {/* <MainNft url={`${NFT_BASE_URL}/${devices[0].id}.png`}> */}
             <img></img>
             <div>
               <h6>#17 CHOCHOLATE PUFF</h6>

@@ -43,7 +43,7 @@ export const nfts = [
     state: 'dark',
     connection: 'broker.emqx.io:1883',
     onOff: false,
-    url: 'http://localhost:3000/ntfs/pxArt_3.png'
+    url: 'http://localhost:3000/ntfs/mystery_box.png'
   },
   {
     icon: '💡',
@@ -53,7 +53,7 @@ export const nfts = [
     state: 'dark',
     connection: 'broker.emqx.io:1883',
     onOff: true,
-    url: 'http://localhost:3000/ntfs/pxArt.png'
+    url: 'http://localhost:3000/ntfs/mystery_box.png'
   },
   {
     icon: '🔦',
@@ -63,7 +63,7 @@ export const nfts = [
     state: 'dark',
     connection: 'broker.emqx.io:1883',
     onOff: true,
-    url: 'http://localhost:3000/ntfs/pxArt_1.png'
+    url: 'http://localhost:3000/ntfs/mystery_box.png'
   },
   {
     icon: '🚏',
@@ -73,7 +73,7 @@ export const nfts = [
     state: 'dark',
     connection: 'broker.emqx.io:1883',
     onOff: false,
-    url: 'http://localhost:3000/ntfs/pxArt_2.png'
+    url: 'http://localhost:3000/ntfs/mystery_box.png'
   },
   {
     icon: '🔦',
@@ -83,7 +83,7 @@ export const nfts = [
     state: 'dark',
     connection: 'broker.emqx.io:1883',
     onOff: true,
-    url: 'http://localhost:3000/ntfs/pxArt_4.png'
+    url: 'http://localhost:3000/ntfs/mystery_box.png'
   },
   {
     icon: '🚏',
@@ -93,6 +93,6 @@ export const nfts = [
     state: 'dark',
     connection: 'broker.emqx.io:1883',
     onOff: false,
-    url: 'http://localhost:3000/ntfs/pxArt_5.png'
+    url: 'http://localhost:3000/ntfs/mystery_box.png'
   }
 ];

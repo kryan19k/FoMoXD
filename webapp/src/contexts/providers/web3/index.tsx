@@ -75,7 +75,7 @@ export default function Web3Provider(props: any) {
       const [newAccount] = await web3.eth.getAccounts();
       setAccount(newAccount);
       lastAcoount = newAccount;
-      if (!gameContract || !newAccount?.length) {
+      if (!gameContract || !newAccount?.length || !foMoERC721) {
         Swal.fire({
           title: `What Does the Fox Say?`,
           // showCancelButton: true,
