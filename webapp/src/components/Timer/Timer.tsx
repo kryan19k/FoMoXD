@@ -44,8 +44,8 @@ const ExpiredNotice = (props: any) => {
     return (
       <div className="expired-notice">
         <div className="puff">⏳</div>
-        <span>Connect to get time</span>
-        <p>Please connect with MetaMask.</p>
+        <span>Connect to get timer</span>
+        <p>Please connect with MetaMask. 🦊</p>
       </div>
     );
   }

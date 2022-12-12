@@ -1,5 +1,16 @@
 # 🧁 FoMoXD
 
+# Steps for test
+
+- Run the hardhat node, add the network to Metamak
+- Deploy contracts with Hardhat
+- Run the web server with docker
+
+```
+docker build -t fomoXD . --no-cache
+docker run -p 3000:3000 fomoXD
+```
+
 
 ## Game Flow
 

@@ -3,10 +3,14 @@ import CubeLayout from '../components/layout/CubeLayout/CubeLayout';
 import Sound, { ReactSoundProps } from 'react-sound';
 import { useWeb3 } from '../contexts/providers';
 import { useSound } from '../contexts/sound/Sound';
+import { useGameData } from '../contexts/gameData/GameData';
 
 const NftsPage = () => {
-  const { gameContract, hooks } = useWeb3();
   const soundContext = useSound();
+  const game = useGameData();
+  const { playerData } = game;
+  console.log('game~', game);
+  console.log('playerData~', playerData.nfts);
   const nfts = localStorage.getItem('nfts');
 
   return (

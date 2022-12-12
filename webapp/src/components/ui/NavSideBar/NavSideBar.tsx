@@ -25,8 +25,7 @@ const Toast = Swal.mixin({
   }
 });
 const NavSideBar = (props: any) => {
-  const { connect, switchNetwork, hooks, gameContract } = useWeb3();
-  const { account } = hooks.useAccount();
+  const { connect, switchNetwork, hooks, gameContract, account } = useWeb3();
   const { roundData, roundId, endTime, setRoundId, fetchNewRound } = useGameData();
   const soundContext = useSound();
 

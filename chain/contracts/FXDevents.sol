@@ -37,6 +37,6 @@ contract FXDevents {
     event onNftAirdrop(
         uint256 indexed roundId,
         address indexed playerAddr,
-        uint256 mintAmount
+        uint256[] tokenIds
     );
 }

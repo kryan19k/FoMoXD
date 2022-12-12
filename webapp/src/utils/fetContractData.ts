@@ -1,5 +1,6 @@
 import Swal from 'sweetalert2';
-export const loadRoundData = async () => {};
+import Artifact from '../contracts/FoMoXD';
+
 export const TeamsArr = ['🍫 ', '🍌 ', '🍓 ', '🥝 '];
 
 const Toast = Swal.mixin({
@@ -108,18 +109,50 @@ export default class GameHelper {
       ?.buyPuffXAddr(activeTeamIndex - 1)
       .send({ from: this.account, value: this.web3.utils.toWei(puffsToETH, 'ether') })
       .then((receipt: any) => {
+        console.log('%cfetContractData.ts line:112 receipt', 'color: red;', receipt);
         console.log('events-->', receipt?.events);
-        console.log('events.returnValues-->', receipt?.events[0]?.returnValues);
-        Swal.fire({
-          title: 'Moon~~~',
-          padding: '5em',
-          color: '#716add',
-          background:
-            '#fff url(https://media.giphy.com/media/3o6Zt6JnZK8AU2qi9W/giphy-downsized-large.gif)',
-          showConfirmButton: false,
-          timer: 2500,
-          backdrop: ` rgba(0,0,123,0.4) url("/nyan-cat.gif") left top no-repeat`
-        });
+        if (receipt?.events?.onNftAirdrop) {
+          console.log(
+            '%cfetContractData.ts line:117 receipt?.events.onNftAirdrop',
+            'color: #007aac;',
+            receipt?.events.onNftAirdrop
+          );
+          Swal.fire({
+            title: `You Got an NFT Air Drop!`,
+            showCancelButton: true,
+            confirmButtonText: 'Go',
+            cancelButtonText: 'No thx.',
+            padding: '3em',
+            color: '#716add',
+            text: 'You Got an NFT',
+            imageUrl: 'https://media.giphy.com/media/oHB0VofpRubjW/giphy.gif',
+            imageWidth: 350,
+            imageAlt: 'Custom image',
+            backdrop: `
+            rgba(0,0,123,0.4)
+            url("/nyan-cat.gif")
+            left top
+            no-repeat
+          `
+          }).then(async (result) => {
+            if (result.isConfirmed) {
+              // TODO: GO NFT page
+              window.location.pathname = '/nfts';
+            }
+          });
+        }
+        if (receipt?.events?.onEthAirdrop) {
+          Swal.fire({
+            title: 'Moon~~~',
+            padding: '5em',
+            color: '#716add',
+            background:
+              '#fff url(https://media.giphy.com/media/3o6Zt6JnZK8AU2qi9W/giphy-downsized-large.gif)',
+            showConfirmButton: false,
+            timer: 2500,
+            backdrop: ` rgba(0,0,123,0.4) url("/nyan-cat.gif") left top no-repeat`
+          });
+        }
       })
       .catch((e: any) => {
         console.log('buy e????', e);
@@ -158,7 +191,29 @@ export default class GameHelper {
     const newPlayerRoundData = await this.gameContract?.methods
       ?.playerRoundsData_(playerId, _roundId)
       .call();
-    this.setPlayerData({ ...newPlayerRoundData, ...newPlayerData });
+
+    this.gameContract
+      .getPastEvents(
+        'onNftAirdrop',
+        {
+          filter: { playerAddr: this.account },
+          fromBlock: 0,
+          toBlock: 'latest'
+        },
+        (error: Error, events: any) => {
+          const nfts = [];
+          for (const e of events) {
+            console.log('events~~~~', e.returnValues.tokenIds);
+            if (e?.returnValues?.tokenIds?.length) {
+              nfts.push(...e.returnValues.tokenIds);
+            }
+          }
+          this.setPlayerData({ ...newPlayerRoundData, ...newPlayerData, nfts });
+        }
+      )
+      .then(function (events: any) {
+        console.log('getPastEvents Err!', events);
+      });
   }
 
   async fetchNewRound(_roundId: number) {
@@ -207,5 +262,20 @@ export default class GameHelper {
           title: `⏳ New End Time.`
         });
       });
+
+    // this.foMoERC721.events
+    //   .allEvents(
+    //     {
+    //       filter: { to: this.account },
+    //       fromBlock: 0,
+    //       toBlock: 'latest'
+    //     },
+    //     function (error: Error, events: any) {
+    //       console.log('events~~~~', events);
+    //     }
+    //   )
+    //   .then(function (events: any) {
+    //     console.log('getPastEvents Err!', events);
+    //   });
   }
 }

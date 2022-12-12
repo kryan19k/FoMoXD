@@ -2,24 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-// 📜 ERC721 Library
-// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/ERC721.sol
-// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-
-// 📜 Auth Library for varify ownership
-// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
-// import "@openzeppelin/contracts/access/Ownable.sol";
-
-// 📜 Counter Library for calculate tokenId
-// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Counters.sol
 import "@openzeppelin/contracts/utils/Counters.sol";
-
-// 📜 Merkle Tree Library for implement whitelist
-// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/MerkleProof.sol
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
-// Open Zeppelin libraries for controlling upgradability and access.
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
@@ -194,19 +179,22 @@ contract FoMoERC721 is
     function foMoXDMint(
         address to,
         uint256 _mintAmount
-    ) public payable onlyFoMoXD {
-        uint256 tokenId = nextTokenId_.current();
+    ) public payable onlyFoMoXD returns (uint256[] memory) {
+        uint256 _tokenId = nextTokenId_.current();
         require(
-            tokenId + _mintAmount < maxSupply_,
+            _tokenId + _mintAmount < maxSupply_,
             "Require amount is over total supply"
         );
         // @dev storage balance update must put before _safemint for prevent reentrantcy
         balance[to] += _mintAmount;
+        uint256[] memory _tokenIds = new uint256[](_mintAmount);
         for (uint256 i = 0; i < _mintAmount; i++) {
-            _safeMint(to, tokenId);
-            tokenId++; // 一定不會超過 100，所以不會爆掉
+            _safeMint(to, _tokenId);
+            _tokenIds[i] = _tokenId;
+            _tokenId++; // 一定不會超過 100，所以不會爆掉
         }
-        nextTokenId_._value = tokenId;
+        nextTokenId_._value = _tokenId;
+        return _tokenIds;
     }
 
     /* ------------------------------------------------------ */

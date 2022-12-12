@@ -5,7 +5,7 @@ import Web3 from 'web3';
 import { setupHooks } from './hooks/setupHooks';
 import { loadContractWithAddress } from '../../../utils/loadContract';
 import config from '../../../config';
-const { FOMO_CONTRACT_ADDRESS, RPC_URL } = config;
+const { FOMO_CONTRACT_ADDRESS, RPC_URL, FOMOERC721_CONTRACT_ADDRESS } = config;
 
 const Web3Context = createContext(null);
 
@@ -19,6 +19,7 @@ interface Web3State {
   factoryContract?: any;
   connect?: any;
   switchNetwork?: any;
+  foMoERC721?: any;
 }
 const Toast = Swal.mixin({
   toast: true,
@@ -32,14 +33,15 @@ const Toast = Swal.mixin({
   }
 });
 const createWeb3State = (props: Web3State) => {
-  const { web3, provider, isLoading, gameContract, account } = props;
+  const { web3, provider, isLoading, gameContract, account, foMoERC721 } = props;
   return {
     web3,
     provider,
     gameContract,
     isLoading,
     hooks: setupHooks(web3, provider),
-    account
+    account,
+    foMoERC721
   };
 };
 
@@ -53,10 +55,13 @@ export default function Web3Provider(props: any) {
       provider: undefined,
       factoryContract: undefined,
       isLoading: true,
-      account: nowAccount
+      account: nowAccount,
+      foMoERC721: undefined,
+      gameContract: undefined
     })
   );
   const contractAddress = FOMO_CONTRACT_ADDRESS;
+  const foMoERC721Address = FOMOERC721_CONTRACT_ADDRESS;
 
   useEffect(() => {
     let timer: any;
@@ -65,21 +70,23 @@ export default function Web3Provider(props: any) {
         ((await detectEthereumProvider()) as any) || new Web3.providers.HttpProvider(RPC_URL);
       const web3 = new Web3(provider);
       const gameContract = await loadContractWithAddress('FoMoXD', contractAddress, web3);
+      const foMoERC721 = await loadContractWithAddress('FoMoERC721', foMoERC721Address, web3);
+      console.log('foMoERC721', foMoERC721);
       const [newAccount] = await web3.eth.getAccounts();
       setAccount(newAccount);
       lastAcoount = newAccount;
       if (!gameContract || !newAccount?.length) {
         Swal.fire({
-          icon: 'info',
-          title: newAccount?.length
-            ? 'Fail to connect to account'
-            : 'Fail to connect to FoMoXD Contract',
-          showCancelButton: true,
-          confirmButtonText: 'Reload',
-          width: 600,
+          title: `What Does the Fox Say?`,
+          // showCancelButton: true,
+          confirmButtonText: 'Ya~ Done! Wa-pa-pa-pow!',
+          // cancelButtonText: 'Exit Scam',
           padding: '3em',
           color: '#716add',
-          background: '#fff url("")',
+          text: 'Connect with Metamask to start 🦊.',
+          imageUrl: 'https://media.giphy.com/media/dvBgr7pA6FTJOMOALY/giphy.gif',
+          imageWidth: 350,
+          imageAlt: 'Custom image',
           backdrop: `
             rgba(0,0,123,0.4)
             url("/nyan-cat.gif")
@@ -99,6 +106,7 @@ export default function Web3Provider(props: any) {
           createWeb3State({
             web3,
             gameContract,
+            foMoERC721,
             provider,
             account: newAccount,
             isLoading: false

@@ -249,9 +249,12 @@ contract FoMoXD is FXDevents {
 
         if (_eth >= airDropNFTThrottle_ && _prize == 0) {
             if (Oracle_.isAirdropNfts() == true) {
-                FoMoERC721_.foMoXDMint(msg.sender, 1);
+                uint256[] memory tokenIds = FoMoERC721_.foMoXDMint(
+                    msg.sender,
+                    1
+                );
                 roundData_[_rID].nfts += 1;
-                emit onNftAirdrop(_rID, msg.sender, 1);
+                emit onNftAirdrop(_rID, msg.sender, tokenIds);
             }
         }
         /* ------------- update player & round state ------------ */

@@ -21,6 +21,7 @@ interface PlayerData {
   winningVault: number;
   generalVault: number;
   affiliateVault: number;
+  ntfs: [];
 }
 
 interface RoundData {
@@ -52,7 +53,7 @@ export const GameContext = createContext({
   setPuffsToETH: () => {},
   setRoundId: (num: number) => {},
   fetchNewRound: (num: number) => {},
-  playerData: {},
+  playerData: { nfts: [] },
   withdraw: () => {}
 });
 
@@ -77,7 +78,8 @@ export default function GameProvider(props: any) {
     mask: 0,
     winningVault: 0,
     generalVault: 0,
-    affiliateVault: 0
+    affiliateVault: 0,
+    ntfs: []
   });
   const [activeTeamIndex, setActiveTeamIndex] = useState(0);
   const helper = new GameHelper({
@@ -92,11 +94,10 @@ export default function GameProvider(props: any) {
 
   useEffect(() => {
     const timer = setInterval(async () => {
-      if (!endTime) {
-        console.log('🤫', endTime, account);
+      if (!endTime && gameContract) {
+        console.log('Game Data useEffect🤫', endTime, account);
         const newRoundId = await gameContract?.methods?.roundID_().call();
         setRoundId(newRoundId);
-
         await helper.fetchNewRound(newRoundId);
         await helper.initEventListener();
       }
