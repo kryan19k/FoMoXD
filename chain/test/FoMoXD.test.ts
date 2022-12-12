@@ -414,51 +414,38 @@ describe("FoMoXD", function () {
       const { foMoERC721, foMoXD, owner } = await loadFixture(
         deployFoMoFixture
       );
-      // TODO:
-      let roundId = 1;
-      // while (roundId < 5) {
-      //   await foMoERC721.foMoXDMint(owner.address, 1);
-      //   const roundBaseURI = `${roundId}_BASE_URI`;
-      //   const roundMysteryBaseURI = `${roundId}_MYSTERI_URI`;
-      //   await foMoERC721.setNftRoundBaseURI(roundId, roundBaseURI);
-      //   await foMoERC721.setMysteryTokenURI(roundMysteryBaseURI);
-      //   const balance = await foMoERC721.balance(owner.address);
-      //   expect(balance).to.equal(roundId);
-      //   await foMoERC721.toggleRoundReveal(roundId);
-      //   const tokenOneURI = await foMoERC721.getRoundTokenURI(
-      //     roundId,
-      //     roundId - 1
-      //   );
-      //   expect(tokenOneURI).to.equal(roundBaseURI);
-      //   const mysteryURI = await foMoERC721.mysteryTokenURI_();
-      //   console.log("tokenOneURI~~", tokenOneURI);
-      //   console.log("mysteryURI~~", mysteryURI);
-      //   expect(tokenOneURI).to.equal(mysteryURI);
-      //   roundId++;
-      // }
-    });
 
-    it("Should return real box URI, after reveal", async function () {
-      const { foMoERC721, foMoXD, owner } = await loadFixture(
-        deployFoMoFixture
-      );
-      // const baseTestURI = "test_url/";
-      // const mysteryTestURI = "mystery_test_url/";
-      // const isRevealed = await foMoERC721.revealed();
-      // expect(isRevealed).to.equal(false);
-      // await foMoERC721.toggleReveal();
-      // const isRevealedAfterTrigger = await foMoERC721.revealed();
-      // expect(isRevealedAfterTrigger).to.equal(true);
-      // await foMoERC721.foMoXDMint(owner.address, 1);
-      // const balance = await foMoERC721.balance(owner.address);
-      // await foMoERC721.setBaseURI(baseTestURI);
-      // await foMoERC721.setMysteryTokenURI(mysteryTestURI);
-      // expect(balance).to.equal(1);
-      // const tokenOneURI = await foMoERC721.tokenURI(0);
-      // const mysteryURI = await foMoERC721.mysteryTokenURI_();
-      // expect(tokenOneURI).to.equal(baseTestURI + "1.json");
-      // expect(mysteryURI).to.equal(mysteryTestURI);
-      // expect(tokenOneURI).to.not.equal(mysteryURI);
+      let roundId = 1;
+      while (roundId < 5) {
+        const roundBaseURI = `${roundId}_BASE_URI/`;
+        const roundMysteryBaseURI = `${roundId}_MYSTERI_URI/`;
+
+        await foMoERC721.setNftRoundBaseURI(roundId, roundBaseURI);
+        await foMoERC721.setMysteryTokenURI(roundMysteryBaseURI);
+        const mysteryURI = await foMoERC721.mysteryTokenURI_();
+        expect(mysteryURI).to.equal(roundMysteryBaseURI);
+
+        await foMoERC721.foMoXDMint(owner.address, 1);
+        const balance = await foMoERC721.balance(owner.address);
+        let isRounReveal = await foMoERC721.roundIsReveal_(roundId);
+        expect(isRounReveal).to.equal(false);
+        expect(balance).to.equal(roundId);
+
+        let tokenOneURI = await foMoERC721.getRoundTokenURI(
+          roundId,
+          roundId - 1
+        );
+
+        expect(tokenOneURI).to.equal(mysteryURI);
+        await foMoERC721.toggleRoundReveal(roundId);
+        const tokenId = roundId - 1;
+        tokenOneURI = await foMoERC721.getRoundTokenURI(roundId, tokenId);
+
+        isRounReveal = await foMoERC721.roundIsReveal_(roundId);
+        expect(isRounReveal).to.equal(true);
+        expect(tokenOneURI).to.equal(roundBaseURI + (+tokenId + 1) + ".json");
+        roundId++;
+      }
     });
 
     it("Should reveal when game end", async function () {});

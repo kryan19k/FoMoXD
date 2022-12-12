@@ -141,7 +141,7 @@ contract FoMoERC721 is
     ) public view virtual returns (string memory) {
         _requireMinted(tokenId); // check if exist
         if (roundIsReveal_[roundId]) {
-            string memory baseURI = _baseURI();
+            string memory baseURI = roundBaseURI_[roundId];
             return
                 bytes(baseURI).length > 0
                     ? string(

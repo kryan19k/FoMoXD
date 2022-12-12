@@ -349,9 +349,8 @@ contract FoMoXD is FXDevents {
         if (_pXdShare > 0) {
             Divies_.deposit{value: _pXdShare}();
         }
-
         // reveal round nft
-        // FoMoERC721_.toggleRoundReveal(roundID_);
+        FoMoERC721_.toggleRoundReveal(roundID_);
         // start next round
         roundID_++;
         _rID++;

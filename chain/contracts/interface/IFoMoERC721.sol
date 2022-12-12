@@ -6,4 +6,6 @@ interface IFoMoERC721 {
         address to,
         uint256 _mintAmount
     ) external payable returns (uint256[] memory);
+
+    function toggleRoundReveal(uint256 roundId) external;
 }
