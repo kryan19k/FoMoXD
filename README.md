@@ -29,7 +29,7 @@ stateDiagram
     Player --> NoTime⏰ 
     NoTime⏰  --> GameOver🤡 : got nothing but puffs 🧁
     NoTime⏰  --> finalPotWinner🤑: final one bought puff 💰
-    NoTime⏰  --> nftWinner👨🏻‍🎨: got NFTS 🖼️
+    NoTime⏰  --> nftWinner👨🏻‍🎨: reveal mystery NFTS 🖼️
 ```
 
 ### How to get NFTs?

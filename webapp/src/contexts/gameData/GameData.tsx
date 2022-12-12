@@ -1,18 +1,6 @@
-import { useContext, useEffect, useRef, useState, useReducer, createContext, useMemo } from 'react';
+import { useContext, useEffect, useState, createContext } from 'react';
 import { useWeb3 } from '../providers';
-import Swal from 'sweetalert2';
 import GameHelper from '../../utils/fetContractData';
-const Toast = Swal.mixin({
-  toast: true,
-  position: 'bottom-end',
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer);
-    toast.addEventListener('mouseleave', Swal.resumeTimer);
-  }
-});
 
 interface PlayerData {
   eth: number;
@@ -54,11 +42,12 @@ export const GameContext = createContext({
   setRoundId: (num: number) => {},
   fetchNewRound: (num: number) => {},
   playerData: { nfts: [] },
-  withdraw: () => {}
+  withdraw: () => {},
+  foMoERC721: {}
 });
 
 export default function GameProvider(props: any) {
-  const { gameContract, web3, account } = useWeb3();
+  const { gameContract, web3, account, foMoERC721 } = useWeb3();
   const [roundId, setRoundId] = useState(0);
   const [wantXPuffs, setWantXPuffs] = useState(0);
   const [puffsToETH, setPuffsToETH] = useState(0);
@@ -89,13 +78,14 @@ export default function GameProvider(props: any) {
     setPlayerData,
     setEndTime,
     setRoundData,
-    roundId
+    roundId,
+    foMoERC721
   });
 
   useEffect(() => {
     const timer = setInterval(async () => {
       if (!endTime && gameContract) {
-        console.log('Game Data useEffect🤫', endTime, account,gameContract);
+        // console.log('Game Data useEffect🤫', endTime, account, gameContract, foMoERC721);
         const newRoundId = await gameContract?.methods?.roundID_().call();
         setRoundId(newRoundId);
         await helper.fetchNewRound(newRoundId);
@@ -104,7 +94,7 @@ export default function GameProvider(props: any) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [web3, gameContract, endTime]);
+  }, [web3, gameContract, endTime, foMoERC721]);
 
   const value = {
     endTime,
@@ -133,7 +123,8 @@ export default function GameProvider(props: any) {
     fetchNewRound: (rId: number) => {
       helper.fetchNewRound(rId);
     },
-    playerData
+    playerData,
+    foMoERC721
   };
   // @ts-ignore
   return <GameContext.Provider value={value}>{props.children}</GameContext.Provider>;

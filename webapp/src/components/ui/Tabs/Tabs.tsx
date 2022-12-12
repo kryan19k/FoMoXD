@@ -33,7 +33,7 @@ const Tabs = (props: any) => {
       title: `🦊 Fail to load web3. Please reload.`
     });
   }
-  console.log('playerData🦊🦊', playerData);
+  // console.log('playerData🦊🦊', playerData);
   const [activeTabIndex, setActiveTabIndex] = useState(1);
 
   const handleTabClick = (index: number) => {

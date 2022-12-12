@@ -21,7 +21,7 @@ describe("FoMoXD", function () {
     const foMoERC721 = await upgrades.deployProxy(FoMoERC721, [
       "fomoERC721",
       "FMO",
-      // FOMOERC721_MYSTERY_BOX_IMAGE_URI,
+      FOMOERC721_MYSTERY_BOX_IMAGE_URI,
     ]);
 
     const PlayerBook = await ethers.getContractFactory("PlayerBook");

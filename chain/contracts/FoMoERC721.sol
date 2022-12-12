@@ -82,7 +82,7 @@ contract FoMoERC721 is
     /*                        DATASETS                        */
     /* ------------------------------------------------------ */
     // bool public revealed; // reveal mystery box or not
-    //string private baseURI;
+    string public baseURI_;
     string public mysteryTokenURI_; // mystery box image URL
     mapping(uint256 => bool) public roundIsReveal_;
     mapping(uint256 => string) private roundBaseURI_;
@@ -105,12 +105,9 @@ contract FoMoERC721 is
      */
     function initialize(
         string memory _name,
-        string memory _symbol
-    )
-        public
-        // string memory _mysteryTokenURI
-        initializer
-    {
+        string memory _symbol,
+        string memory _mysteryTokenURI
+    ) public initializer {
         __ERC721_init(_name, _symbol);
         __Ownable_init();
         price_ = 0.01 ether;
@@ -119,7 +116,7 @@ contract FoMoERC721 is
         ownerMaxBalance = 20;
         userMaxBalance = 10;
         maxMintPerTx = 5;
-        // mysteryTokenURI_ = _mysteryTokenURI;
+        mysteryTokenURI_ = _mysteryTokenURI;
     }
 
     /* ------------------------------------------------------ */
@@ -141,7 +138,9 @@ contract FoMoERC721 is
     ) public view virtual returns (string memory) {
         _requireMinted(tokenId); // check if exist
         if (roundIsReveal_[roundId]) {
-            string memory baseURI = roundBaseURI_[roundId];
+            string memory baseURI = bytes(roundBaseURI_[roundId]).length > 0
+                ? roundBaseURI_[roundId]
+                : baseURI_;
             return
                 bytes(baseURI).length > 0
                     ? string(
@@ -153,7 +152,10 @@ contract FoMoERC721 is
                     )
                     : "";
         } else {
-            return mysteryTokenURI_;
+            return
+                bytes(roundMysteryTokenURI[roundId]).length > 0
+                    ? roundMysteryTokenURI[roundId]
+                    : mysteryTokenURI_;
         }
     }
 
@@ -251,6 +253,17 @@ contract FoMoERC721 is
         string calldata _newBaseURI
     ) external onlyOwner {
         roundBaseURI_[_roundId] = _newBaseURI;
+    }
+
+    function setRoundMysteryURI(
+        uint256 _roundId,
+        string calldata _newBaseURI
+    ) external onlyOwner {
+        roundMysteryTokenURI[_roundId] = _newBaseURI;
+    }
+
+    function setBaseURI(string calldata _newBaseURI) external onlyOwner {
+        baseURI_ = _newBaseURI;
     }
 
     function setMysteryTokenURI(

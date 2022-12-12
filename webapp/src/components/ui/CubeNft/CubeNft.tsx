@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { CubeNftDiv } from './style';
-import config from '../../../config';
-const { NFT_BASE_URL } = config;
 
 const CubeNft = (props: {
   info: {
@@ -12,9 +10,11 @@ const CubeNft = (props: {
     connection?: string;
     onOff?: boolean;
     url?: string;
+    image?: string;
   };
 }) => {
   const { icon, title, id, state, connection, url } = props.info;
+
   const [onOff, setOnOff] = useState(props.info.onOff);
   const onClickHandler = () => {
     onOff

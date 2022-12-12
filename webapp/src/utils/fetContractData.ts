@@ -1,5 +1,4 @@
 import Swal from 'sweetalert2';
-import Artifact from '../contracts/FoMoXD';
 
 export const TeamsArr = ['🍫 ', '🍌 ', '🍓 ', '🥝 '];
 
@@ -17,6 +16,7 @@ const Toast = Swal.mixin({
 
 export default class GameHelper {
   gameContract: any;
+  foMoERC721: any;
   web3: any;
   account: any;
   setPlayerData: any;
@@ -25,6 +25,7 @@ export default class GameHelper {
   roundId: number;
   constructor(opt: {
     gameContract: any;
+    foMoERC721: any;
     web3: any;
     account: any;
     setPlayerData: any;
@@ -32,18 +33,28 @@ export default class GameHelper {
     setRoundData: any;
     roundId: number;
   }) {
-    const { gameContract, web3, account, setPlayerData, setEndTime, setRoundData, roundId } = opt;
+    const {
+      gameContract,
+      foMoERC721,
+      web3,
+      account,
+      setPlayerData,
+      setEndTime,
+      setRoundData,
+      roundId
+    } = opt;
     this.gameContract = gameContract;
     this.web3 = web3;
     this.account = account;
     this.setPlayerData = setPlayerData;
     this.setEndTime = setEndTime;
     this.setRoundData = setRoundData;
+    this.foMoERC721 = foMoERC721;
     this.roundId = roundId;
   }
   async buyPuffs(opt: { activeTeamIndex: number; puffsToETH: number; wantXPuffs: any }) {
     const { wantXPuffs, activeTeamIndex, puffsToETH } = opt;
-    console.log('activeTeamIndex', activeTeamIndex);
+    console.log('activeTeamIndex~~~', activeTeamIndex);
 
     new Audio('/sounds/coin.wav').play();
     if (wantXPuffs <= 0 || puffsToETH <= 0) {
@@ -193,31 +204,53 @@ export default class GameHelper {
       .call();
 
     this.gameContract
-      .getPastEvents(
-        'onNftAirdrop',
-        {
-          filter: { playerAddr: this.account },
-          fromBlock: 0,
-          toBlock: 'latest'
-        },
-        (error: Error, events: any) => {
-          const nfts = [];
-          for (const e of events) {
-            console.log('events~~~~', e.returnValues.tokenIds);
-            if (e?.returnValues?.tokenIds?.length) {
-              nfts.push(...e.returnValues.tokenIds);
-            }
+      .getPastEvents('onNftAirdrop', {
+        filter: { playerAddr: this.account },
+        fromBlock: 0,
+        toBlock: 'latest'
+      })
+      .then(async (events: any) => {
+        const lastNfts = [];
+        for (let i = 0; i < events.length; i++) {
+          const e = events[i];
+          console.log('events~~~~', e.returnValues);
+          console.log('💖💖💖💖?~', e?.returnValues);
+          // lastNfts.push(...e?.returnValues?.tokenIds);
+          const nowRoundId = e?.returnValues?.roundId;
+          for (let j = 0; j < e.returnValues.tokenIds.length; j++) {
+            // const tokenId = e?.returnValues?.tokenIds[j];
+            // for (const tokenId of e.returnValues.tokenIds) {
+            //   const meta = await this.foMoERC721.methods
+            //     .getRoundTokenURI(e?.returnValues.roundId, tokenId)
+            //     .call();
+            //   console.log('🧁meta~~', meta);
+            //   const fetchData = await fetch(meta, {
+            //     method: 'GET'
+            //   });
+            //   console.log('fetchData ~~', fetchData);
+            //   const res = (await fetchData?.json()) as { image: string };
+            //   console.log('🤡🤡', res);
+            //   // nfts.push({ ...res, url: 'https://ipfs.io/ipfs/' + res.image.split('ipfs://')[1] });
+            //   lastNfts.push({
+            //     ...res,
+            //     url: 'https://gateway.pinata.cloud/ipfs/' + res.image.split('ipfs://')[1]
+            //   });
+            //   console.log('💰💰💰💰~~~~~~~~~', lastNfts);
+            // }
           }
-          this.setPlayerData({ ...newPlayerRoundData, ...newPlayerData, nfts });
+          lastNfts.push(
+            ...e?.returnValues?.tokenIds.map((e: number) => {
+              return { tokenId: e, roundId: nowRoundId };
+            })
+          );
+          this.setPlayerData({ ...newPlayerRoundData, ...newPlayerData, nfts: lastNfts });
         }
-      )
-      .then(function (events: any) {
-        console.log('getPastEvents Err!', events);
       });
   }
 
   async fetchNewRound(_roundId: number) {
     const r = await this.gameContract?.methods?.roundData_(_roundId).call();
+
     console.log(
       'fetchNewRound~',
       _roundId,

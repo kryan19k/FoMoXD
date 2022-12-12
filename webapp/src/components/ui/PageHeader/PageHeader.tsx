@@ -7,7 +7,7 @@ function PageHeader(props: {
   activeIndex?: any;
   buyPuffs?: any;
 }) {
-  const { gameContract } = useWeb3();
+  // const { gameContract } = useWeb3();
   if (props.isShowBuyButton) {
     return (
       <div className="page-header">

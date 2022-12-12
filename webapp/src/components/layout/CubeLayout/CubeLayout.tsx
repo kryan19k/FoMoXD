@@ -17,7 +17,7 @@ const CubeLayout = (props: any) => {
             {/* <MainNft url={`${NFT_BASE_URL}/${devices[0].id}.png`}> */}
             <img></img>
             <div>
-              <h6>#17 CHOCHOLATE PUFF</h6>
+              <h6>{devices[0].name ? devices[0].name : '#17 MYSTREY PUFF'}</h6>
               <p>Last sale: 5 ETH</p>
             </div>
           </MainNft>
@@ -26,7 +26,7 @@ const CubeLayout = (props: any) => {
             {devices.length > 0 &&
               devices.map((info: any, index: number) => {
                 if (index === 0) return;
-                return <CubeNft info={info} key={info.id}></CubeNft>;
+                return <CubeNft info={info} key={index}></CubeNft>;
               })}
           </div>
         </div>

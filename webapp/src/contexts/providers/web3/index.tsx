@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState, useReducer, createContext, useMemo } from 'react';
+import { useContext, useEffect, useState, createContext, useMemo } from 'react';
 import detectEthereumProvider from '@metamask/detect-provider';
 import Swal from 'sweetalert2';
 import Web3 from 'web3';
@@ -10,17 +10,18 @@ const { FOMO_CONTRACT_ADDRESS, RPC_URL, FOMOERC721_CONTRACT_ADDRESS } = config;
 const Web3Context = createContext(null);
 
 interface Web3State {
+  gameContract?: any;
+  foMoERC721?: any;
   web3: any;
   account: string;
   hooks?: any;
   provider: any;
   isLoading: any;
-  gameContract?: any;
   factoryContract?: any;
   connect?: any;
   switchNetwork?: any;
-  foMoERC721?: any;
 }
+
 const Toast = Swal.mixin({
   toast: true,
   position: 'bottom-end',
@@ -32,9 +33,11 @@ const Toast = Swal.mixin({
     toast.addEventListener('mouseleave', Swal.resumeTimer);
   }
 });
+
 const createWeb3State = (props: Web3State) => {
   const { web3, provider, isLoading, gameContract, account, foMoERC721 } = props;
-  return {
+  console.log('foMoERC721💩💩', foMoERC721);
+  const result = {
     web3,
     provider,
     gameContract,
@@ -43,6 +46,7 @@ const createWeb3State = (props: Web3State) => {
     account,
     foMoERC721
   };
+  return result;
 };
 
 let lastAcoount = '';
@@ -56,8 +60,8 @@ export default function Web3Provider(props: any) {
       factoryContract: undefined,
       isLoading: true,
       account: nowAccount,
-      foMoERC721: undefined,
-      gameContract: undefined
+      gameContract: undefined,
+      foMoERC721: undefined
     })
   );
   const contractAddress = FOMO_CONTRACT_ADDRESS;
@@ -71,7 +75,6 @@ export default function Web3Provider(props: any) {
       const web3 = new Web3(provider);
       const gameContract = await loadContractWithAddress('FoMoXD', contractAddress, web3);
       const foMoERC721 = await loadContractWithAddress('FoMoERC721', foMoERC721Address, web3);
-      console.log('foMoERC721', foMoERC721);
       const [newAccount] = await web3.eth.getAccounts();
       setAccount(newAccount);
       lastAcoount = newAccount;
@@ -102,14 +105,15 @@ export default function Web3Provider(props: any) {
           }
         });
       } else {
+        console.log('💩💩💩💩foMoERC721~~~~~???', foMoERC721);
         setWeb3Api(
           createWeb3State({
             web3,
             gameContract,
-            foMoERC721,
             provider,
             account: newAccount,
-            isLoading: false
+            isLoading: false,
+            foMoERC721
           })
         );
         Toast.fire({
@@ -118,32 +122,20 @@ export default function Web3Provider(props: any) {
         });
       }
 
-      // await hre.ethers.getContractAt("FoMoXD", "0x742489F22807ebB4C36ca6cD95c3e1C044B7B6c8");
-      // gameContract.filters.Transfer(account, null);
-      // const fromMe = gameContract.filters.Transfer(account, null);
-      // provider.on(fromMe, (from: string, to: string, amount: any, event: any) => {
-      //   console.log('Transfer|sent', { from, to, amount, event });
-      //   // queryTokenBalance(window)
-      // });
-
-      // const toMe = gameContract.filters.Transfer(null, account);
-      // provider.on(toMe, (from: string, to: string, amount: any, event: any) => {
-      //   console.log('Transfer|received', { from, to, amount, event });
-      //   // queryTokenBalance(window)
-      // });
-
       timer = setInterval(async () => {
+        const newfoMoERC721 = await loadContractWithAddress('FoMoERC721', foMoERC721Address, web3);
         const [newAccount] = await web3.eth.getAccounts();
-        if (lastAcoount !== newAccount) {
+        if (lastAcoount !== newAccount || !foMoERC721) {
           lastAcoount = newAccount;
           setAccount(newAccount);
           Toast.fire({
             icon: 'success',
             title: 'Connected to Metamask.'
           });
-          setWeb3Api((api) => ({
+          setWeb3Api((api: any) => ({
             ...api,
-            account: newAccount
+            account: newAccount,
+            foMoERC721: newfoMoERC721
           }));
         }
       }, 5000);
