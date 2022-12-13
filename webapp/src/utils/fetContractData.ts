@@ -22,6 +22,7 @@ export default class GameHelper {
   setPlayerData: any;
   setEndTime: any;
   setRoundData: any;
+  eventsListeners: any = [];
   roundId: number;
   playerId: number = 0;
 
@@ -233,7 +234,10 @@ export default class GameHelper {
   }
 
   async initEventListener() {
-    this.fomoXdContract.events
+    this.eventsListeners.forEach((element: any) => {
+      element.stopWatching();
+    });
+    const allEvents = this.fomoXdContract.events
       .allEvents({
         // filter: {
         //   from: [
@@ -246,26 +250,10 @@ export default class GameHelper {
       })
       .on('data', async (event: any) => {
         console.log('✅ New Events!', this.roundId, event);
-        await this.fetchNewRound(this.roundId);
+        // await this.fetchNewRound(this.roundId);
       });
 
-    this.fomoXdContract.events
-      .NewEndTime()
-      .on('data', (event: any) => {
-        Toast.fire({
-          icon: 'success',
-          title: `⏳ New End Time.`
-        });
-        this.setEndTime(+event?.returnValues?.timeStamp * 1000);
-      })
-      .on('error', function (error: any, receipt: any) {
-        Toast.fire({
-          icon: 'error',
-          title: `⏳ New End Time.`
-        });
-      });
-
-    this.fomoXdContract.events.onWithdraw().on('data', (event: any) => {
+    const onWithdraw = this.fomoXdContract.events.onWithdraw().on('data', (event: any) => {
       if (event?.returnValues?.playerAddress !== this.account) {
         Toast.fire({
           icon: 'success',
@@ -294,9 +282,18 @@ export default class GameHelper {
       //   });
     });
 
-    this.fomoXdContract.events.onEndRound().on('data', (event: any) => {
+    const onEndRound = this.fomoXdContract.events.onEndRound().on('data', (event: any) => {
       const { roundId, winnerId, winnerTeamId, endTime, generalShare, winnerShare } =
         event?.returnValues;
+      console.log(
+        'onEndRound~~~~',
+        roundId,
+        winnerId,
+        winnerTeamId,
+        endTime,
+        generalShare,
+        winnerShare
+      );
       if (winnerId == this.playerId) {
         Swal.fire({
           title: `You won the game!`,
@@ -317,7 +314,7 @@ export default class GameHelper {
           `
         }).then(async (result) => {
           if (result.isConfirmed) {
-            window.location.pathname = '/nfts';
+            window.location.pathname = '/';
           }
         });
       } else {
@@ -345,5 +342,6 @@ export default class GameHelper {
         });
       }
     });
+    this.eventsListeners.push(allEvents, onWithdraw, onEndRound);
   }
 }

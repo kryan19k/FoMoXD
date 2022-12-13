@@ -349,18 +349,11 @@ contract FoMoXD is FXDevents {
         if (_pXdShare > 0) {
             Divies_.deposit{value: _pXdShare}();
         }
+
         // reveal round nft
         FoMoERC721_.toggleRoundReveal(roundID_);
 
         // start next round
-        emit onEndRound(
-            roundID_,
-            _winPlayerID,
-            _winTeamId,
-            _generalShare,
-            _winnerShare
-        );
-
         roundID_++;
         _rID++;
         roundData_[_rID].pot = _resShare; // 💰 分完後的餘額給下一輪
@@ -369,6 +362,14 @@ contract FoMoXD is FXDevents {
             block.timestamp +
             roundInitTime_ +
             roundGapTime_;
+
+        emit onEndRound(
+            roundID_,
+            _winPlayerID,
+            _winTeamId,
+            _generalShare,
+            _winnerShare
+        );
     }
 
     function managePlayer(uint256 _pID) private {

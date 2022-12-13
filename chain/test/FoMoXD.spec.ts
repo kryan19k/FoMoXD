@@ -241,11 +241,14 @@ describe("FoMoXD", function () {
 
           await time.increase(10 * 60);
 
-          await foMoXD.connect(player2).buyPuffXAddr(Teams.CHOCO, {
-            value: value,
-          });
+          const triggerEndRoundTx = await foMoXD
+            .connect(player2)
+            .buyPuffXAddr(Teams.CHOCO, {
+              value: value,
+            });
           let { player_: player_2, playerRoundsData_: playerRoundsData_2 } =
             await snapshot.getPlayerSnapshot(1, 2);
+          await expect(triggerEndRoundTx).to.emit(foMoXD, "onEndRound");
 
           // Should add player2 msg.value to generalVault
           expect(player_2.generalVault).to.equal(value);
