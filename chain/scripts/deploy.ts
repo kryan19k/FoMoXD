@@ -13,18 +13,15 @@ async function main() {
   const foMoERC721 = await upgrades.deployProxy(FoMoERC721, [
     "fomoERC721",
     "FMO",
-    "https://gateway.pinata.cloud/ipfs/Qmbz5XvBQudkHxLf95mPTzHh2bepAXv35sF744cDcrFo9o/",
-    // "https://ipfs.io/ipfs/Qmbz5XvBQudkHxLf95mPTzHh2bepAXv35sF744cDcrFo9o/",
+    "http://localhost:3000/nfts/json/mystery_box.json",
   ]);
 
   await foMoERC721.setRoundMysteryURI(
     2,
-    "https://gateway.pinata.cloud/ipfs/QmcVtZKmqBZAknKtHSPgEo4TSUJZjseh3MpvnuDeaZPBff/"
+    "http://localhost:3000/nfts/json/mystery_1.json"
   );
 
-  await foMoERC721.setBaseURI(
-    "https://gateway.pinata.cloud/ipfs/QmcVtZKmqBZAknKtHSPgEo4TSUJZjseh3MpvnuDeaZPBff/"
-  );
+  await foMoERC721.setBaseURI("http://localhost:3000/nfts/json/");
 
   console.log(`[FoMoERC721] Deployed to ${foMoERC721.address}`);
 

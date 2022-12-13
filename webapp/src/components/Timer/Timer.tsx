@@ -1,13 +1,10 @@
-import React from 'react';
 import { useCountdown } from '../hooks/useCountdown';
 import './Timer.css';
 import DateTimeDisplay from './DateTimeDisplay';
 
 const ExpiredNotice = (props: any) => {
-  const isWinner = false;
-  const isNFTOwner = false;
   if (props.isGameEnd) {
-    if (isWinner) {
+    if (props.isWinner) {
       return (
         <div className="expired-notice">
           <div className="puff">🤑</div>
@@ -15,7 +12,7 @@ const ExpiredNotice = (props: any) => {
           <p>You won everthing.</p>
         </div>
       );
-    } else if (isNFTOwner) {
+    } else if (props.nftsNum > 0) {
       return (
         <div className="expired-notice">
           <div className="puff">🖼️👨🏻‍🎨</div>
@@ -28,7 +25,7 @@ const ExpiredNotice = (props: any) => {
         <div className="expired-notice">
           <div className="puff">💩</div>
           <span>Game Over!!!</span>
-          <p>You won nothing but puffs.</p>
+          <p>{`You won nothing but puffs. Plyaer Id: ${props.winnerId} won.`}</p>
         </div>
       );
     }
@@ -77,14 +74,22 @@ const ShowCounter = (props: any) => {
 const CountdownTimer = (props: any) => {
   const [days, hours, minutes, seconds] = useCountdown(props.targetDate);
   if (props.isGameEnd) {
-    return <ExpiredNotice getTime={true} isGameEnd={props.isGameEnd} />;
+    return (
+      <ExpiredNotice
+        getTime={true}
+        isGameEnd={props.isGameEnd}
+        isWinner={props.isWinner}
+        winnerId={props.winnerId}
+        nftsNum={props.nftsNum}
+      />
+    );
   } else {
     if (props.targetDate > 0 && minutes > 0) {
       return <ShowCounter days={days} hours={hours} minutes={minutes} seconds={seconds} />;
     } else if (props.targetDate <= 0) {
-      return <ExpiredNotice getTime={false} isGameEnd={props.isGameEnd} />;
+      return <ExpiredNotice getTime={false} isGameEnd={props.isGameEnd} nftsNum={props.nftsNum} />;
     } else {
-      return <ExpiredNotice getTime={true} isGameEnd={props.isGameEnd} />;
+      return <ExpiredNotice getTime={true} isGameEnd={props.isGameEnd} nftsNum={props.nftsNum} />;
     }
   }
 };

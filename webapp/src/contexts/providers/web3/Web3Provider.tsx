@@ -4,9 +4,11 @@ import Swal from 'sweetalert2';
 import Web3 from 'web3';
 import { setupHooks } from './hooks/setupHooks';
 import { loadContractWithAddress } from '../../../utils/loadContract';
-import config from '../../../config';
-const { FOMO_CONTRACT_ADDRESS, RPC_URL, FOMOERC721_CONTRACT_ADDRESS } = config;
-
+const {
+  REACT_APP_FOMO_CONTRACT_ADDRESS,
+  REACT_APP_RPC_URL,
+  REACT_APP_FOMOERC721_CONTRACT_ADDRESS
+} = process.env;
 const Web3Context = createContext(null);
 
 interface Web3State {
@@ -64,17 +66,24 @@ export default function Web3Provider(props: any) {
       foMoERC721: undefined
     })
   );
-  const contractAddress = FOMO_CONTRACT_ADDRESS;
-  const foMoERC721Address = FOMOERC721_CONTRACT_ADDRESS;
 
   useEffect(() => {
     let timer: any;
     const loadProvider = async () => {
       const provider =
-        ((await detectEthereumProvider()) as any) || new Web3.providers.HttpProvider(RPC_URL);
+        ((await detectEthereumProvider()) as any) ||
+        new Web3.providers.HttpProvider(REACT_APP_RPC_URL as string);
       const web3 = new Web3(provider);
-      const gameContract = await loadContractWithAddress('FoMoXD', contractAddress, web3);
-      const foMoERC721 = await loadContractWithAddress('FoMoERC721', foMoERC721Address, web3);
+      const gameContract = await loadContractWithAddress(
+        'FoMoXD',
+        web3.utils.toChecksumAddress(REACT_APP_FOMO_CONTRACT_ADDRESS as string),
+        web3
+      );
+      const foMoERC721 = await loadContractWithAddress(
+        'FoMoERC721',
+        web3.utils.toChecksumAddress(REACT_APP_FOMOERC721_CONTRACT_ADDRESS as string),
+        web3
+      );
       const [newAccount] = await web3.eth.getAccounts();
       setAccount(newAccount);
       lastAcoount = newAccount;
@@ -105,7 +114,6 @@ export default function Web3Provider(props: any) {
           }
         });
       } else {
-        console.log('💩💩💩💩foMoERC721~~~~~???', foMoERC721);
         setWeb3Api(
           createWeb3State({
             web3,
@@ -123,7 +131,12 @@ export default function Web3Provider(props: any) {
       }
 
       timer = setInterval(async () => {
-        const newfoMoERC721 = await loadContractWithAddress('FoMoERC721', foMoERC721Address, web3);
+        const newfoMoERC721 = await loadContractWithAddress(
+          'FoMoERC721',
+          web3.utils.toChecksumAddress(REACT_APP_FOMOERC721_CONTRACT_ADDRESS as string),
+
+          web3
+        );
         const [newAccount] = await web3.eth.getAccounts();
         if (lastAcoount !== newAccount || !foMoERC721) {
           lastAcoount = newAccount;
@@ -138,7 +151,7 @@ export default function Web3Provider(props: any) {
             foMoERC721: newfoMoERC721
           }));
         }
-      }, 5000);
+      }, 1000);
     };
 
     loadProvider();

@@ -24,11 +24,12 @@ interface RoundData {
   eth?: number;
   pot?: number;
   mask?: number;
+  isWinner?: boolean;
 }
 
 export const GameContext = createContext({
   roundId: 0,
-  roundData: { puffs: 0, pot: 0, mask: 0, ended: false },
+  roundData: { puffs: 0, pot: 0, mask: 0, ended: false, isWinner: false, winnerId: undefined },
   endTime: 0,
   setEndTime: () => {},
   setRoundData: () => {},
@@ -71,7 +72,8 @@ export default function GameProvider(props: any) {
     ntfs: []
   });
   const [activeTeamIndex, setActiveTeamIndex] = useState(0);
-  const helper = new GameHelper({
+
+  const helper: GameHelper = new GameHelper({
     gameContract,
     web3,
     account,

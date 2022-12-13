@@ -52,7 +52,7 @@ export const nfts = [
     key: '1',
     state: 'dark',
     connection: 'broker.emqx.io:1883',
-    onOff: true,
+    onOff: false,
     url: 'http://localhost:3000/ntfs/mystery_box.png'
   },
   {
@@ -62,7 +62,7 @@ export const nfts = [
     key: '2',
     state: 'dark',
     connection: 'broker.emqx.io:1883',
-    onOff: true,
+    onOff: false,
     url: 'http://localhost:3000/ntfs/mystery_box.png'
   },
   {
@@ -82,7 +82,7 @@ export const nfts = [
     key: '6',
     state: 'dark',
     connection: 'broker.emqx.io:1883',
-    onOff: true,
+    onOff: false,
     url: 'http://localhost:3000/ntfs/mystery_box.png'
   },
   {

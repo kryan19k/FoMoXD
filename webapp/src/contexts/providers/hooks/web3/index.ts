@@ -1,15 +1,15 @@
-import { useHooks } from "../../web3/index";
+import { useHooks } from '../../web3/Web3Provider';
 
-const _isEmpty = (data:any) => {
+const _isEmpty = (data: any) => {
   return (
     data == null ||
-    data === "" ||
+    data === '' ||
     (Array.isArray(data) && data.length === 0) ||
     (data.constructor === Object && Object.keys(data).length === 0)
   );
 };
 
-const enhanceHook = (swrRes:any) => {
+const enhanceHook = (swrRes: any) => {
   const { data, error } = swrRes;
   const hasInitialResponse = !!(data || error);
   const isEmpty = hasInitialResponse && _isEmpty(data);
@@ -17,19 +17,19 @@ const enhanceHook = (swrRes:any) => {
   return {
     ...swrRes,
     hasInitialResponse,
-    isEmpty,
+    isEmpty
   };
 };
 
 export const useAccount = () => {
-  const res = enhanceHook(useHooks((hooks:any) => hooks.useAccount)());
+  const res = enhanceHook(useHooks((hooks: any) => hooks.useAccount)());
 
   return res;
 };
 
 export const useNetwork = () => {
-  const res = enhanceHook(useHooks((hooks:any) => hooks.useNetwork)());
+  const res = enhanceHook(useHooks((hooks: any) => hooks.useNetwork)());
   return {
-    network: res,
+    network: res
   };
 };

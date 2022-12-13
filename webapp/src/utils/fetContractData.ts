@@ -54,8 +54,6 @@ export default class GameHelper {
   }
   async buyPuffs(opt: { activeTeamIndex: number; puffsToETH: number; wantXPuffs: any }) {
     const { wantXPuffs, activeTeamIndex, puffsToETH } = opt;
-    console.log('activeTeamIndex~~~', activeTeamIndex);
-
     new Audio('/sounds/coin.wav').play();
     if (wantXPuffs <= 0 || puffsToETH <= 0) {
       Toast.fire({
@@ -211,33 +209,8 @@ export default class GameHelper {
       })
       .then(async (events: any) => {
         const lastNfts = [];
-        for (let i = 0; i < events.length; i++) {
-          const e = events[i];
-          console.log('events~~~~', e.returnValues);
-          console.log('💖💖💖💖?~', e?.returnValues);
-          // lastNfts.push(...e?.returnValues?.tokenIds);
+        for (const e of events) {
           const nowRoundId = e?.returnValues?.roundId;
-          for (let j = 0; j < e.returnValues.tokenIds.length; j++) {
-            // const tokenId = e?.returnValues?.tokenIds[j];
-            // for (const tokenId of e.returnValues.tokenIds) {
-            //   const meta = await this.foMoERC721.methods
-            //     .getRoundTokenURI(e?.returnValues.roundId, tokenId)
-            //     .call();
-            //   console.log('🧁meta~~', meta);
-            //   const fetchData = await fetch(meta, {
-            //     method: 'GET'
-            //   });
-            //   console.log('fetchData ~~', fetchData);
-            //   const res = (await fetchData?.json()) as { image: string };
-            //   console.log('🤡🤡', res);
-            //   // nfts.push({ ...res, url: 'https://ipfs.io/ipfs/' + res.image.split('ipfs://')[1] });
-            //   lastNfts.push({
-            //     ...res,
-            //     url: 'https://gateway.pinata.cloud/ipfs/' + res.image.split('ipfs://')[1]
-            //   });
-            //   console.log('💰💰💰💰~~~~~~~~~', lastNfts);
-            // }
-          }
           lastNfts.push(
             ...e?.returnValues?.tokenIds.map((e: number) => {
               return { tokenId: e, roundId: nowRoundId };
@@ -246,20 +219,22 @@ export default class GameHelper {
           this.setPlayerData({ ...newPlayerRoundData, ...newPlayerData, nfts: lastNfts });
         }
       });
+    return playerId;
   }
 
   async fetchNewRound(_roundId: number) {
     const r = await this.gameContract?.methods?.roundData_(_roundId).call();
-
+    const playerId = await this.fetchPlayerRoundData(_roundId);
     console.log(
       'fetchNewRound~',
       _roundId,
       r,
       this.account,
-      new Date(r.endTime * 1000).toLocaleTimeString()
+      new Date(r.endTime * 1000).toLocaleTimeString(),
+      r.winnerId,
+      playerId === r.winnerId
     );
-    await this.fetchPlayerRoundData(_roundId);
-    this.setRoundData(r);
+    this.setRoundData({ ...r, isWinner: playerId === r.winnerId });
     this.setEndTime(r.endTime * 1000);
   }
 

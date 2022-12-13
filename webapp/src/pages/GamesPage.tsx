@@ -1,4 +1,3 @@
-import { Fragment, useState, useEffect, useContext } from 'react';
 import Cube from '../components/ui/Cube/Cube';
 import PageHeader from '../components/ui/PageHeader/PageHeader';
 import Tabs from '../components/ui/Tabs/Tabs';
@@ -25,9 +24,7 @@ const GamesPage = (props: any) => {
   const game = useGameData();
   const {
     endTime,
-    setEndTime,
     roundData,
-    setRoundData,
     setActiveTeamIndex,
     activeTeamIndex,
     buyPuffs,
@@ -61,7 +58,13 @@ const GamesPage = (props: any) => {
                 });
               }}
             />
-            <CountdownTimer targetDate={endTime} isGameEnd={roundData.ended} />
+            <CountdownTimer
+              targetDate={endTime}
+              isGameEnd={roundData.ended}
+              isWinner={roundData.isWinner}
+              winnerId={roundData.winnerId}
+              nftsNum={playerData?.nfts?.length}
+            />
             <PageHeader
               title={activeTeamIndex ? 'Buy Puffs' : 'CHOOSE YOUR TEAM'}
               isShowBuyButton={activeTeamIndex !== 0}
