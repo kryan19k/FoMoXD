@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
+import "./library/FXDdatasets.sol";
 
 contract FXDevents {
     event NewEndTime(uint256 timeStamp);
@@ -26,10 +27,9 @@ contract FXDevents {
     event onEndRound(
         uint256 indexed roundId,
         uint256 indexed winnerId,
-        uint256 winnerTeamId,
-        uint256 endTime,
-        uint256 _generalShare,
-        uint256 _winnerShare
+        FXDdatasets.Teams winnerTeamId,
+        uint256 generalShare,
+        uint256 winnerShare
     );
 
     event onEthAirdrop(uint256 indexed playerID, uint256 prize);

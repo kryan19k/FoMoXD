@@ -15,7 +15,7 @@ const Toast = Swal.mixin({
 });
 
 export default class GameHelper {
-  gameContract: any;
+  fomoXdContract: any;
   foMoERC721: any;
   web3: any;
   account: any;
@@ -23,8 +23,10 @@ export default class GameHelper {
   setEndTime: any;
   setRoundData: any;
   roundId: number;
+  playerId: number = 0;
+
   constructor(opt: {
-    gameContract: any;
+    fomoXdContract: any;
     foMoERC721: any;
     web3: any;
     account: any;
@@ -34,7 +36,7 @@ export default class GameHelper {
     roundId: number;
   }) {
     const {
-      gameContract,
+      fomoXdContract,
       foMoERC721,
       web3,
       account,
@@ -43,7 +45,7 @@ export default class GameHelper {
       setRoundData,
       roundId
     } = opt;
-    this.gameContract = gameContract;
+    this.fomoXdContract = fomoXdContract;
     this.web3 = web3;
     this.account = account;
     this.setPlayerData = setPlayerData;
@@ -114,7 +116,7 @@ export default class GameHelper {
 
   async buyPuffXAddr(opt: { activeTeamIndex: number; puffsToETH: number }) {
     const { activeTeamIndex, puffsToETH } = opt;
-    await this.gameContract.methods
+    await this.fomoXdContract.methods
       ?.buyPuffXAddr(activeTeamIndex - 1)
       .send({ from: this.account, value: this.web3.utils.toWei(puffsToETH, 'ether') })
       .then((receipt: any) => {
@@ -165,7 +167,7 @@ export default class GameHelper {
   }
 
   async withdraw() {
-    await this.gameContract.methods
+    await this.fomoXdContract.methods
       ?.withdraw()
       .send({ from: this.account })
       .then(function (receipt: any) {
@@ -187,13 +189,13 @@ export default class GameHelper {
   }
 
   async fetchPlayerRoundData(_roundId: number) {
-    const playerId = await this.gameContract?.methods?.playerIDxAddr_(this.account).call();
-    const newPlayerData = await this.gameContract?.methods?.player_(playerId).call();
-    const newPlayerRoundData = await this.gameContract?.methods
-      ?.playerRoundsData_(playerId, _roundId)
+    this.playerId = await this.fomoXdContract?.methods?.playerIDxAddr_(this.account).call();
+    const newPlayerData = await this.fomoXdContract?.methods?.player_(this.playerId).call();
+    const newPlayerRoundData = await this.fomoXdContract?.methods
+      ?.playerRoundsData_(this.playerId, _roundId)
       .call();
 
-    this.gameContract
+    this.fomoXdContract
       .getPastEvents('onNftAirdrop', {
         filter: { playerAddr: this.account },
         fromBlock: 0,
@@ -211,11 +213,11 @@ export default class GameHelper {
           this.setPlayerData({ ...newPlayerRoundData, ...newPlayerData, nfts: lastNfts });
         }
       });
-    return playerId;
+    return this.playerId;
   }
 
   async fetchNewRound(_roundId: number) {
-    const r = await this.gameContract?.methods?.roundData_(_roundId).call();
+    const r = await this.fomoXdContract?.methods?.roundData_(_roundId).call();
     const playerId = await this.fetchPlayerRoundData(_roundId);
     console.log(
       'fetchNewRound~',
@@ -231,7 +233,7 @@ export default class GameHelper {
   }
 
   async initEventListener() {
-    this.gameContract.events
+    this.fomoXdContract.events
       .allEvents({
         // filter: {
         //   from: [
@@ -247,7 +249,7 @@ export default class GameHelper {
         await this.fetchNewRound(this.roundId);
       });
 
-    this.gameContract.events
+    this.fomoXdContract.events
       .NewEndTime()
       .on('data', (event: any) => {
         Toast.fire({
@@ -263,7 +265,7 @@ export default class GameHelper {
         });
       });
 
-    this.gameContract.events.onWithdraw().on('data', (event: any) => {
+    this.fomoXdContract.events.onWithdraw().on('data', (event: any) => {
       if (event?.returnValues?.playerAddress !== this.account) {
         Toast.fire({
           icon: 'success',
@@ -275,20 +277,73 @@ export default class GameHelper {
           )} ETH from FoMo.`
         });
       }
+
+      // this.foMoERC721.events
+      //   .allEvents(
+      //     {
+      //       filter: { to: this.account },
+      //       fromBlock: 0,
+      //       toBlock: 'latest'
+      //     },
+      //     function (error: Error, events: any) {
+      //       console.log('events~~~~', events);
+      //     }
+      //   )
+      //   .then(function (events: any) {
+      //     console.log('getPastEvents Err!', events);
+      //   });
     });
-    // this.foMoERC721.events
-    //   .allEvents(
-    //     {
-    //       filter: { to: this.account },
-    //       fromBlock: 0,
-    //       toBlock: 'latest'
-    //     },
-    //     function (error: Error, events: any) {
-    //       console.log('events~~~~', events);
-    //     }
-    //   )
-    //   .then(function (events: any) {
-    //     console.log('getPastEvents Err!', events);
-    //   });
+
+    this.fomoXdContract.events.onEndRound().on('data', (event: any) => {
+      const { roundId, winnerId, winnerTeamId, endTime, generalShare, winnerShare } =
+        event?.returnValues;
+      if (winnerId == this.playerId) {
+        Swal.fire({
+          title: `You won the game!`,
+          showCancelButton: true,
+          confirmButtonText: 'OK',
+          cancelButtonText: 'No thx.',
+          padding: '3em',
+          color: '#716add',
+          text: `You eon ${Web3Lib.utils.fromWei(winnerShare, 'ether')}`,
+          imageUrl: 'https://media.giphy.com/media/r95kAgBEzeapljl1ft/giphy.gif',
+          imageWidth: 350,
+          imageAlt: 'Custom image',
+          backdrop: `
+            rgba(0,0,123,0.4)
+            url("/nyan-cat.gif")
+            left top
+            no-repeat
+          `
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            window.location.pathname = '/nfts';
+          }
+        });
+      } else {
+        Swal.fire({
+          title: `Game Over!`,
+          showCancelButton: true,
+          confirmButtonText: 'OK',
+          cancelButtonText: 'No thx.',
+          padding: '3em',
+          color: '#716add',
+          text: `Winner won ${Web3Lib.utils.fromWei(winnerShare, 'ether')}`,
+          imageUrl: 'https://media.giphy.com/media/r95kAgBEzeapljl1ft/giphy.gif',
+          imageWidth: 350,
+          imageAlt: 'Custom image',
+          backdrop: `
+            rgba(0,0,123,0.4)
+            url("/nyan-cat.gif")
+            left top
+            no-repeat
+          `
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            window.location.pathname = '/';
+          }
+        });
+      }
+    });
   }
 }

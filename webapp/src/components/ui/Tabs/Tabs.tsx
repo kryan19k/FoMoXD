@@ -16,7 +16,7 @@ const Toast = Swal.mixin({
   }
 });
 const Tabs = (props: any) => {
-  const { gameContract } = useWeb3();
+  const { fomoXdContract } = useWeb3();
   const {
     playerData,
     roundId,
@@ -27,7 +27,7 @@ const Tabs = (props: any) => {
     setPuffsToETH,
     withdraw
   } = props;
-  if (!gameContract) {
+  if (!fomoXdContract) {
     Toast.fire({
       icon: 'error',
       title: `🦊 Fail to load web3. Please reload.`
@@ -44,7 +44,7 @@ const Tabs = (props: any) => {
 
   async function updatePuffsAndETH(puffs: number) {
     setWantXPuffs(puffs);
-    const eth = await gameContract?.methods
+    const eth = await fomoXdContract?.methods
       ?.iWantXPuffs(Web3.utils.toWei(puffs.toString(), 'ether'))
       .call();
     setPuffsToETH(Web3.utils.fromWei(eth.toString(), 'ether'));

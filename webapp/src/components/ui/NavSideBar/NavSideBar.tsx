@@ -1,18 +1,11 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NavSideBarDiv } from './style';
-import { MetaMaskInpageProvider } from '@metamask/providers';
 import Swal from 'sweetalert2';
 import { useSound } from '../../../contexts/sound/Sound';
-
 // Hooks
 import { useWeb3 } from '../../../contexts/providers';
 import { useGameData } from '../../../contexts/gameData/GameData';
-declare global {
-  interface Window {
-    ethereum?: MetaMaskInpageProvider;
-  }
-}
 const Toast = Swal.mixin({
   toast: true,
   position: 'bottom-end',
@@ -25,13 +18,11 @@ const Toast = Swal.mixin({
   }
 });
 const NavSideBar = (props: any) => {
-  const { connect, switchNetwork, hooks, gameContract, account } = useWeb3();
-  const { roundData, roundId, endTime, setRoundId, fetchNewRound } = useGameData();
+  const { connect, switchNetwork, fomoXdContract, account, disconnect } = useWeb3();
+  const { roundId, endTime, setRoundId, fetchNewRound } = useGameData();
   const soundContext = useSound();
 
-  const onSubmit = (enterDeviceData: any) => {
-    props.onSubmit(enterDeviceData);
-  };
+  const [connected, setConnected] = useState(true);
 
   const onClickSoundHandler = (e: React.MouseEvent) => {
     soundContext.setIsPlaying(!soundContext.isPlaying);
@@ -42,7 +33,8 @@ const NavSideBar = (props: any) => {
   };
 
   const onClickPickRoundHandler = async (e: React.MouseEvent) => {
-    const newRoundId = await gameContract?.methods?.roundID_().call();
+    new Audio('/sounds/car_trunk_O.mp3').play();
+    const newRoundId = await fomoXdContract?.methods?.roundID_().call();
     let index = newRoundId as number;
     const inputOptions: any = {};
     while (index > 0) {
@@ -50,7 +42,7 @@ const NavSideBar = (props: any) => {
       index--;
     }
     const { value: roundSelected } = await Swal.fire({
-      title: 'Select field validation',
+      title: 'Select a round',
       input: 'select',
       inputOptions: inputOptions,
       inputPlaceholder: 'Select a round',
@@ -79,24 +71,15 @@ const NavSideBar = (props: any) => {
 
   const onClickMetaMaskHandler = (e: React.MouseEvent) => {
     new Audio('/sounds/car_trunk_O.mp3').play();
-    connect();
-    switchNetwork();
-    const Toast = Swal.mixin({
-      toast: true,
-      position: 'bottom-end',
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true,
-      didOpen: (toast) => {
-        toast.addEventListener('mouseenter', Swal.stopTimer);
-        toast.addEventListener('mouseleave', Swal.resumeTimer);
-      }
-    });
-    Toast.fire({
-      icon: 'success',
-      title: '🦊 Connected in successfully'
-    });
+    if (connected) {
+      disconnect();
+    } else {
+      connect();
+      switchNetwork();
+    }
+    setConnected(!connected);
   };
+
   return (
     <Fragment>
       <NavSideBarDiv>
@@ -136,35 +119,16 @@ const NavSideBar = (props: any) => {
               style={{ textDecoration: 'none' }}
               className="nav-bar-icon"
               to="/exitScam"
-              onClick={async (e: React.MouseEvent) => {
-                new Audio('/sounds/car_trunk_O.mp3').play();
-                const newRoundId = await gameContract?.methods?.roundID_().call();
-                setRoundId(newRoundId);
-                fetchNewRound(newRoundId);
-                Toast.fire({
-                  icon: 'success',
-                  title: `🎰 You are now at lastest round`
-                });
-              }}>
+              onClick={onClickPickRoundHandler}>
               <h5>🎰</h5>
             </Link>
-            {!account ? (
-              <Link
-                style={{ textDecoration: 'none' }}
-                className="nav-bar-icon"
-                to="/exitScam"
-                onClick={onClickMetaMaskHandler}>
-                <h5>🦊</h5>
-              </Link>
-            ) : (
-              <Link
-                style={{ textDecoration: 'none' }}
-                className="nav-bar-icon"
-                to="/exitScam"
-                onClick={onClickPickRoundHandler}>
-                <h5>🎯</h5>
-              </Link>
-            )}
+            <Link
+              style={{ textDecoration: 'none' }}
+              className="nav-bar-icon"
+              to="/exitScam"
+              onClick={onClickMetaMaskHandler}>
+              <h5>{connected ? '🦊' : '🫥'}</h5>
+            </Link>
             <div
               style={{ textDecoration: 'none' }}
               className="nav-bar-icon"

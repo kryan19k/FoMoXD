@@ -12,7 +12,7 @@ const {
 const Web3Context = createContext(null);
 
 interface Web3State {
-  gameContract?: any;
+  fomoXdContract?: any;
   foMoERC721?: any;
   web3: any;
   account: string;
@@ -21,6 +21,7 @@ interface Web3State {
   isLoading: any;
   factoryContract?: any;
   connect?: any;
+  disconnect?: any;
   switchNetwork?: any;
 }
 
@@ -37,11 +38,11 @@ const Toast = Swal.mixin({
 });
 
 const createWeb3State = (props: Web3State) => {
-  const { web3, provider, isLoading, gameContract, account, foMoERC721 } = props;
+  const { web3, provider, isLoading, fomoXdContract, account, foMoERC721 } = props;
   const result = {
     web3,
     provider,
-    gameContract,
+    fomoXdContract,
     isLoading,
     hooks: setupHooks(web3, provider),
     account,
@@ -61,7 +62,7 @@ export default function Web3Provider(props: any) {
       factoryContract: undefined,
       isLoading: true,
       account: nowAccount,
-      gameContract: undefined,
+      fomoXdContract: undefined,
       foMoERC721: undefined
     })
   );
@@ -73,7 +74,7 @@ export default function Web3Provider(props: any) {
         ((await detectEthereumProvider()) as any) ||
         new Web3.providers.HttpProvider(REACT_APP_RPC_URL as string);
       const web3 = new Web3(provider);
-      const gameContract = await loadContractWithAddress(
+      const fomoXdContract = await loadContractWithAddress(
         'FoMoXD',
         web3.utils.toChecksumAddress(REACT_APP_FOMO_CONTRACT_ADDRESS as string),
         web3
@@ -86,7 +87,7 @@ export default function Web3Provider(props: any) {
       const [newAccount] = await web3.eth.getAccounts();
       setAccount(newAccount);
       lastAcoount = newAccount;
-      if (!gameContract || !newAccount?.length || !foMoERC721) {
+      if (!fomoXdContract || !newAccount?.length || !foMoERC721) {
         Swal.fire({
           title: `What Does the Fox Say?`,
           // showCancelButton: true,
@@ -107,6 +108,15 @@ export default function Web3Provider(props: any) {
         }).then(async (result) => {
           if (result.isConfirmed) {
             Swal.fire('Saved!', '', 'success');
+            await provider.request({ method: 'eth_requestAccounts' });
+            Toast.fire({
+              icon: 'success',
+              title: '🦊 Connected in successfully'
+            });
+            await provider.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x' + (31337).toString(16) }]
+            });
             window.location.reload();
           } else if (result.isDenied) {
             Swal.fire('OK', '', 'info');
@@ -116,7 +126,7 @@ export default function Web3Provider(props: any) {
         setWeb3Api(
           createWeb3State({
             web3,
-            gameContract,
+            fomoXdContract,
             provider,
             account: newAccount,
             isLoading: false,
@@ -167,6 +177,10 @@ export default function Web3Provider(props: any) {
         ? async () => {
             try {
               await provider.request({ method: 'eth_requestAccounts' });
+              Toast.fire({
+                icon: 'success',
+                title: '🦊 Connected in successfully'
+              });
             } catch (error) {
               Toast.fire({
                 icon: 'error',
@@ -179,6 +193,36 @@ export default function Web3Provider(props: any) {
             Toast.fire({
               icon: 'error',
               title: 'Can not connect to metamask, try to reload your browser please.'
+            });
+          },
+      disconnect: provider
+        ? async () => {
+            try {
+              await provider.request({
+                method: 'eth_requestAccounts',
+                params: [{ eth_accounts: {} }]
+              });
+              setWeb3Api((api: any) => ({
+                ...api,
+                account: ''
+              }));
+              Toast.fire({
+                icon: 'success',
+                title: '🫥 Disconnected in successfully'
+              });
+            } catch (error) {
+              console.error(error);
+              Toast.fire({
+                icon: 'error',
+                title: 'Can not disconnect to metamask, try to reload your browser please.'
+              });
+              // window.location.reload();
+            }
+          }
+        : () => {
+            Toast.fire({
+              icon: 'error',
+              title: 'Can not disconnect to metamask, try to reload your browser please.'
             });
           },
       switchNetwork: provider

@@ -14,7 +14,7 @@ import "./library/FXDdatasets.sol";
 
 import "./FXDevents.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract FoMoXD is FXDevents {
     using FXDPuffsCalc for uint256;
@@ -201,7 +201,6 @@ contract FoMoXD is FXDevents {
     ) private {
         /* -------------- if player is new to round ------------- */
         if (playerRoundsData_[_pID][_rID].puffs == 0) {
-            // TODO: 送 NFT
             managePlayer(_pID);
         }
         /* --------------- early round eth limiter -------------- */
@@ -301,8 +300,8 @@ contract FoMoXD is FXDevents {
         uint256 _rID = roundID_;
 
         // grab our winning player and team id's
-        uint256 _winPID = roundData_[_rID].winnerId;
-        FXDdatasets.Teams _winTID = roundData_[_rID].winnerTeamId;
+        uint256 _winPlayerID = roundData_[_rID].winnerId;
+        FXDdatasets.Teams _winTeamId = roundData_[_rID].winnerTeamId;
 
         // grab our pot amount
         uint256 _pot = roundData_[_rID].pot;
@@ -312,9 +311,10 @@ contract FoMoXD is FXDevents {
 
         /* ------------------- External share ------------------- */
         uint256 _communityShare = (_pot / 50);
-        uint256 _pXdShare = (_pot * potSplit_[_winTID].pXdShare) / 100;
+        uint256 _pXdShare = (_pot * potSplit_[_winTeamId].pXdShare) / 100;
         /* ------------------- Internal Share ------------------- */
-        uint256 _generalShare = (_pot * potSplit_[_winTID].generalShare) / 100;
+        uint256 _generalShare = (_pot * potSplit_[_winTeamId].generalShare) /
+            100;
         uint256 _winnerShare = (_pot * 48) / 100;
 
         uint256 _resShare = _pot -
@@ -335,7 +335,7 @@ contract FoMoXD is FXDevents {
             _resShare = _resShare + _dust;
         }
 
-        player_[_winPID].winningVault += _winnerShare;
+        player_[_winPlayerID].winningVault += _winnerShare;
 
         if (!Community_.deposit{value: _communityShare}()) {
             _pXdShare = _pXdShare + _communityShare;
@@ -351,15 +351,24 @@ contract FoMoXD is FXDevents {
         }
         // reveal round nft
         FoMoERC721_.toggleRoundReveal(roundID_);
+
         // start next round
+        emit onEndRound(
+            roundID_,
+            _winPlayerID,
+            _winTeamId,
+            _generalShare,
+            _winnerShare
+        );
+
         roundID_++;
         _rID++;
-        roundData_[_rID].startTime = block.timestamp;
-        roundData_[_rID].endTime =
+        roundData_[_rID].pot = _resShare; // 💰 分完後的餘額給下一輪
+        roundData_[roundID_].startTime = block.timestamp;
+        roundData_[roundID_].endTime =
             block.timestamp +
             roundInitTime_ +
             roundGapTime_;
-        roundData_[_rID].pot = _resShare; // 💰 分完後的餘額給下一輪
     }
 
     function managePlayer(uint256 _pID) private {
@@ -396,16 +405,6 @@ contract FoMoXD is FXDevents {
         } else {
             roundData_[_rID].endTime = roundMaxTime_ + _now;
         }
-    }
-
-    function addUpTimer() public {
-        // roundData_[_rID].endTime = block.timestamp + roundInitTime_;
-        roundData_[roundID_].endTime =
-            block.timestamp +
-            roundGapTime_ +
-            roundInitTime_;
-
-        emit NewEndTime(block.timestamp + roundGapTime_ + roundInitTime_);
     }
 
     /**
@@ -622,9 +621,7 @@ contract FoMoXD is FXDevents {
 
         // check to see if round has ended and no one has run round end yet
         if (
-            _now > roundData_[_rID].endTime &&
-            roundData_[_rID].ended == false &&
-            roundData_[_rID].winnerId != 0
+            _now > roundData_[_rID].endTime && roundData_[_rID].ended == false
         ) {
             // end the round (distributes pot)
             roundData_[_rID].ended = true;

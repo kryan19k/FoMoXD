@@ -48,7 +48,7 @@ export const GameContext = createContext({
 });
 
 export default function GameProvider(props: any) {
-  const { gameContract, web3, account, foMoERC721 } = useWeb3();
+  const { fomoXdContract, web3, account, foMoERC721 } = useWeb3();
   const [roundId, setRoundId] = useState(0);
   const [wantXPuffs, setWantXPuffs] = useState(0);
   const [puffsToETH, setPuffsToETH] = useState(0);
@@ -74,7 +74,7 @@ export default function GameProvider(props: any) {
   const [activeTeamIndex, setActiveTeamIndex] = useState(0);
 
   const helper: GameHelper = new GameHelper({
-    gameContract,
+    fomoXdContract,
     web3,
     account,
     setPlayerData,
@@ -86,8 +86,8 @@ export default function GameProvider(props: any) {
 
   useEffect(() => {
     const timer = setInterval(async () => {
-      if (!endTime && gameContract) {
-        const newRoundId = await gameContract?.methods?.roundID_().call();
+      if (!endTime && fomoXdContract) {
+        const newRoundId = await fomoXdContract?.methods?.roundID_().call();
         setRoundId(newRoundId);
         await helper.fetchNewRound(newRoundId);
         await helper.initEventListener();
@@ -95,7 +95,7 @@ export default function GameProvider(props: any) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [web3, gameContract, endTime, foMoERC721]);
+  }, [web3, fomoXdContract, endTime, foMoERC721]);
 
   const value = {
     endTime,
@@ -135,8 +135,8 @@ export function useGameData() {
   return useContext(GameContext);
 }
 
-// gameContract.filters.Transfer(account, null);
-// const fromMe = gameContract.filters.Transfer(account, null);
+// fomoXdContract.filters.Transfer(account, null);
+// const fromMe = fomoXdContract.filters.Transfer(account, null);
 // provider.on(fromMe, (from: string, to: string, amount: any, event: any) => {
 //   console.log('Transfer|sent', { from, to, amount, event });
 //   // queryTokenBalance(window)

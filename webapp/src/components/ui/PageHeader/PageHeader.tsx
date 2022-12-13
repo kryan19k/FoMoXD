@@ -1,4 +1,3 @@
-import { useWeb3 } from '../../../contexts/providers';
 import './PageHeader.css';
 
 function PageHeader(props: {
@@ -7,7 +6,6 @@ function PageHeader(props: {
   activeIndex?: any;
   buyPuffs?: any;
 }) {
-  // const { gameContract } = useWeb3();
   if (props.isShowBuyButton) {
     return (
       <div className="page-header">
