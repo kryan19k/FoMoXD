@@ -38,7 +38,6 @@ const Toast = Swal.mixin({
 
 const createWeb3State = (props: Web3State) => {
   const { web3, provider, isLoading, gameContract, account, foMoERC721 } = props;
-  console.log('foMoERC721💩💩', foMoERC721);
   const result = {
     web3,
     provider,

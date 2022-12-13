@@ -87,7 +87,6 @@ export default function GameProvider(props: any) {
   useEffect(() => {
     const timer = setInterval(async () => {
       if (!endTime && gameContract) {
-        // console.log('Game Data useEffect🤫', endTime, account, gameContract, foMoERC721);
         const newRoundId = await gameContract?.methods?.roundID_().call();
         setRoundId(newRoundId);
         await helper.fetchNewRound(newRoundId);

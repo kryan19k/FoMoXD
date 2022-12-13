@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2';
-
+import Web3Lib from 'web3';
 export const TeamsArr = ['🍫 ', '🍌 ', '🍓 ', '🥝 '];
 
 const Toast = Swal.mixin({
@@ -118,14 +118,7 @@ export default class GameHelper {
       ?.buyPuffXAddr(activeTeamIndex - 1)
       .send({ from: this.account, value: this.web3.utils.toWei(puffsToETH, 'ether') })
       .then((receipt: any) => {
-        console.log('%cfetContractData.ts line:112 receipt', 'color: red;', receipt);
-        console.log('events-->', receipt?.events);
         if (receipt?.events?.onNftAirdrop) {
-          console.log(
-            '%cfetContractData.ts line:117 receipt?.events.onNftAirdrop',
-            'color: #007aac;',
-            receipt?.events.onNftAirdrop
-          );
           Swal.fire({
             title: `You Got an NFT Air Drop!`,
             showCancelButton: true,
@@ -145,7 +138,6 @@ export default class GameHelper {
           `
           }).then(async (result) => {
             if (result.isConfirmed) {
-              // TODO: GO NFT page
               window.location.pathname = '/nfts';
             }
           });
@@ -164,7 +156,7 @@ export default class GameHelper {
         }
       })
       .catch((e: any) => {
-        console.log('buy e????', e);
+        console.error(e);
         Toast.fire({
           icon: 'error',
           title: `🧁 Fail to Buy Puffs.`
@@ -179,14 +171,14 @@ export default class GameHelper {
       .then(function (receipt: any) {
         Toast.fire({
           icon: 'success',
-          title: `💰 Withdraw.`
+          title: `💰 Success to withdraw ${Web3Lib.utils.fromWei(
+            receipt?.events?.onWithdraw?.returnValues?.ethOut,
+            'ether'
+          )} ETH.`
         });
-        console.log('withdraw newContractInstance???', receipt); // instance with the new contract address
-        console.log('withdraw events-->', receipt?.events);
-        console.log('withdraw events.returnValues-->', receipt?.events[0]?.returnValues);
       })
       .catch((e: any) => {
-        console.log('withdraw e????', e);
+        console.error(e);
         Toast.fire({
           icon: 'error',
           title: `🤡 Fail to withdraw.`
@@ -271,6 +263,19 @@ export default class GameHelper {
         });
       });
 
+    this.gameContract.events.onWithdraw().on('data', (event: any) => {
+      if (event?.returnValues?.playerAddress !== this.account) {
+        Toast.fire({
+          icon: 'success',
+          title: `🤑 PlayerId: ${
+            event?.returnValues?.playerID
+          } just siphoned ${Web3Lib.utils.fromWei(
+            event?.returnValues?.ethOut,
+            'ether'
+          )} ETH from FoMo.`
+        });
+      }
+    });
     // this.foMoERC721.events
     //   .allEvents(
     //     {
