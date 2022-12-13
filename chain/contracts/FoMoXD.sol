@@ -11,13 +11,18 @@ import "./interface/INumOracle.sol";
 
 import "./library/FXDPuffsCalc.sol";
 import "./library/FXDdatasets.sol";
+import "./library/NameFilter.sol";
 
 import "./FXDevents.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 contract FoMoXD is FXDevents {
+    /* ------------------------------------------------------ */
+    /*                         LIBRARY                        */
+    /* ------------------------------------------------------ */
     using FXDPuffsCalc for uint256;
+    using NameFilter for string;
     /* ------------------------------------------------------ */
     /*                        CONTRACT
     /* ------------------------------------------------------ */
@@ -53,8 +58,14 @@ contract FoMoXD is FXDevents {
     /* ----------------------- Airdrop ---------------------- */
     uint256 public airDropPot_; // person who gets the airdrop wins part of this pot
     /* --------------------- Player Data --------------------- */
+    // (name => pID) returns player id by name
+    mapping(bytes32 => uint256) public pIDxName_;
+
     // (addr => pID) returns player id by address
     mapping(address => uint256) public playerIDxAddr_;
+
+    // (pID => name => bool) list of names a player owns.  (used so you can change your display name amongst any name you own)
+    mapping(uint256 => mapping(bytes32 => bool)) public plyrNames_;
     // (pID => data) player data
     mapping(uint256 => FXDdatasets.Player) public player_;
     // (pID => rID => data) player round data by player id & round id
@@ -89,7 +100,8 @@ contract FoMoXD is FXDevents {
         _;
     }
 
-    modifier onlyHuman(address sender) {
+    modifier isHuman() {
+        address sender = msg.sender;
         uint256 size;
         assembly {
             size := extcodesize(sender)
@@ -99,7 +111,10 @@ contract FoMoXD is FXDevents {
     }
 
     modifier onlyDevs() {
-        require(msg.sender == owner, "only team just can activate");
+        require(
+            Community_.isDev(msg.sender) == true,
+            "msg sender is not a dev"
+        );
         _;
     }
 
@@ -147,32 +162,125 @@ contract FoMoXD is FXDevents {
     }
 
     receive() external payable {
-        buyPuffXAddr(FXDdatasets.Teams.CHOCO);
+        buyXid(FXDdatasets.Teams.CHOCO, 0);
     }
 
     fallback() external payable {
-        buyPuffXAddr(FXDdatasets.Teams.CHOCO);
+        buyXid(FXDdatasets.Teams.CHOCO, 0);
     }
 
     /* ------------------------------------------------------ */
     /*                   INTERNAL FUNCTIONS
     /* ------------------------------------------------------ */
     function buyPuffXAddr(
-        FXDdatasets.Teams _team
+        FXDdatasets.Teams _team,
+        address _affCode
     )
         public
         payable
         isActivated
-        onlyHuman(msg.sender)
+        isHuman
         isWithinLimits(msg.value)
         returns (uint256 _playerID)
     {
         determinePID();
         uint256 _playerID = playerIDxAddr_[msg.sender];
-        _buyPuff(_playerID, _team);
+        // manage affiliate residuals
+        uint256 _affID;
+        // if no affiliate code was given or player tried to use their own, lolz
+        if (_affCode == address(0) || _affCode == msg.sender) {
+            // use last stored affiliate code
+            _affID = player_[_playerID].lastAffiliateId;
+
+            // if affiliate code was given
+        } else {
+            // get affiliate ID from aff Code
+            _affID = playerIDxAddr_[_affCode];
+
+            // if affID is not the same as previously stored
+            if (_affID != player_[_playerID].lastAffiliateId) {
+                // update last affiliate
+                player_[_playerID].lastAffiliateId = _affID;
+            }
+        }
+
+        // verify a valid team was selected
+        _team = verifyTeam(_team);
+
+        _buyPuff(_playerID, _team, _affID);
     }
 
-    function _buyPuff(uint256 _playerID, FXDdatasets.Teams _team) internal {
+    function buyXname(
+        FXDdatasets.Teams _team,
+        bytes32 _affCode
+    ) public payable isActivated isHuman isWithinLimits(msg.value) {
+        // set up our tx event data and determine if player is new or not
+        determinePID();
+
+        // fetch player id
+        uint256 _pID = playerIDxAddr_[msg.sender];
+
+        // manage affiliate residuals
+        uint256 _affID;
+        // if no affiliate code was given or player tried to use their own, lolz
+        if (_affCode == "" || _affCode == player_[_pID].name) {
+            // use last stored affiliate code
+            _affID = player_[_pID].lastAffiliateId;
+
+            // if affiliate code was given
+        } else {
+            // get affiliate ID from aff Code
+            _affID = pIDxName_[_affCode];
+
+            // if affID is not the same as previously stored
+            if (_affID != player_[_pID].lastAffiliateId) {
+                // update last affiliate
+                player_[_pID].lastAffiliateId = _affID;
+            }
+        }
+
+        // verify a valid team was selected
+        _team = verifyTeam(_team);
+
+        // buy core
+        _buyPuff(_pID, _team, _affID);
+    }
+
+    function buyXid(
+        // 購買 Key
+        FXDdatasets.Teams _team,
+        uint256 _affCode
+    ) public payable isActivated isHuman isWithinLimits(msg.value) {
+        // set up our tx event data and determine if player is new or not
+        determinePID();
+
+        // fetch player id
+        uint256 _pID = playerIDxAddr_[msg.sender];
+
+        // manage affiliate residuals
+        // if no affiliate code was given or player tried to use their own, lolz
+        if (_affCode == 0 || _affCode == _pID) {
+            // use last stored affiliate code
+            _affCode = player_[_pID].lastAffiliateId; // 如果 _affCode 沒有填就用上一次的
+
+            // if affiliate code was given & its not the same as previously stored
+        } else if (_affCode != player_[_pID].lastAffiliateId) {
+            // update last affiliate
+            player_[_pID].lastAffiliateId = _affCode;
+        }
+
+        // verify a valid team was selected
+        _team = verifyTeam(_team);
+
+        // buy core
+        _buyPuff(_pID, _team, _affCode);
+    }
+
+    function _buyPuff(
+        uint256 _playerID,
+        FXDdatasets.Teams _team,
+        uint256 _affID
+    ) internal {
         uint256 _rID = roundID_;
         uint256 _now = block.timestamp;
         if (
@@ -260,7 +368,6 @@ contract FoMoXD is FXDevents {
         // update player
         playerRoundsData_[_pID][_rID].puffs += _puffs;
         playerRoundsData_[_pID][_rID].eth += _eth;
-
         // update round
         roundData_[_rID].puffs += _puffs;
         roundData_[_rID].eth += _eth;
@@ -607,7 +714,7 @@ contract FoMoXD is FXDevents {
      * @dev withdraws all of your earnings.
      * -functionhash- 0x3ccfd60b
      */
-    function withdraw() public isActivated onlyHuman(msg.sender) {
+    function withdraw() public isActivated isHuman {
         // setup local rID
         uint256 _rID = roundID_;
 
@@ -893,5 +1000,64 @@ contract FoMoXD is FXDevents {
         //     );
         // rounds over.  need price for new round
         else return ((_puffs).eth());
+    }
+
+    function verifyTeam(
+        FXDdatasets.Teams _team
+    ) private pure returns (FXDdatasets.Teams) {
+        if (uint8(_team) < 0 || uint8(_team) > 3)
+            return (FXDdatasets.Teams.BANA);
+        else return (_team);
+    }
+
+    function registerNameXID(
+        string calldata _nameString,
+        uint256 _affCode,
+        bool _all
+    ) public payable isHuman {
+        bytes32 _name = _nameString.nameFilter();
+        address _addr = msg.sender;
+        uint256 _paid = msg.value;
+        (bool _isNewPlayer, uint256 _affID) = PlayerBook_
+            .registerNameXIDFromDapp{value: _paid}(
+            _addr,
+            _name,
+            _affCode,
+            _all
+        );
+
+        uint256 _pID = playerIDxAddr_[_addr];
+
+        // fire event
+        emit onNewName(
+            _pID,
+            _addr,
+            _name,
+            _isNewPlayer,
+            _affID,
+            player_[_affID].addr,
+            player_[_affID].name,
+            _paid,
+            block.timestamp
+        );
+    }
+
+    function receivePlayerInfo(
+        uint256 _pID,
+        address _addr,
+        bytes32 _name,
+        uint256 _laff
+    ) external {
+        require(
+            msg.sender == address(PlayerBook_),
+            "your not playerNames contract... hmmm.."
+        );
+        if (playerIDxAddr_[_addr] != _pID) playerIDxAddr_[_addr] = _pID;
+        if (pIDxName_[_name] != _pID) pIDxName_[_name] = _pID;
+        if (player_[_pID].addr != _addr) player_[_pID].addr = _addr;
+        if (player_[_pID].name != _name) player_[_pID].name = _name;
+        if (player_[_pID].lastAffiliateId != _laff)
+            player_[_pID].lastAffiliateId = _laff;
+        if (plyrNames_[_pID][_name] == false) plyrNames_[_pID][_name] = true;
     }
 }

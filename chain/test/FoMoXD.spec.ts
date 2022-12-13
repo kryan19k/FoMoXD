@@ -24,9 +24,6 @@ describe("FoMoXD", function () {
       FOMOERC721_MYSTERY_BOX_IMAGE_URI,
     ]);
 
-    const PlayerBook = await ethers.getContractFactory("PlayerBook");
-    const playerBook = await PlayerBook.deploy();
-
     const Divies = await ethers.getContractFactory("Divies");
     const divies = await Divies.deploy();
 
@@ -35,6 +32,9 @@ describe("FoMoXD", function () {
       [owner.address, dev1.address, dev2.address],
       2
     );
+
+    const PlayerBook = await ethers.getContractFactory("PlayerBook");
+    const playerBook = await PlayerBook.deploy(community.address);
 
     const NumOracle = await ethers.getContractFactory("SimpleNumOracle");
     const numOracle = await NumOracle.deploy(1);
@@ -69,7 +69,7 @@ describe("FoMoXD", function () {
       mockedNumOracle.address
     );
 
-    await foMoXD.setOtherFomo(otherFoMo.address);
+    await foMoXD.connect(owner).setOtherFomo(otherFoMo.address);
 
     const snapshot = new SnapshotHepler(foMoXD);
 
@@ -134,12 +134,13 @@ describe("FoMoXD", function () {
           let lastPuffsGot = Infinity;
           for (const [index, p] of players.entries()) {
             const depositETHAmount = +parseUnits("1000", "gwei") + 1;
-            await foMoXD.connect(p).buyPuffXAddr(Teams.CHOCO, {
+            await foMoXD.connect(p).buyXid(Teams.CHOCO, 0, {
               value: depositETHAmount,
             });
             expect(await foMoXD.connect(p).playerIDxAddr_(p.address)).to.equal(
               index + 1
             );
+
             const { player_, playerRoundsData_ } =
               await snapshot.getPlayerSnapshot(1, index + 1);
             const {
@@ -152,6 +153,7 @@ describe("FoMoXD", function () {
               lastAffiliateId, // last affiliate id used
             } = player_;
             const { eth, puffs, mask } = playerRoundsData_;
+
             expect(lastRound).to.equal(1);
             expect(addr).to.equal(p.address);
             expect(winningVault).to.equal(0);
@@ -159,6 +161,7 @@ describe("FoMoXD", function () {
             expect(affiliateVault).to.equal(0);
             expect(lastAffiliateId).to.equal(0);
             expect(eth).to.equal(depositETHAmount);
+
             /* -------------- puff price should goes up ------------- */
             expect(+puffs).to.gte(0);
             expect(+puffs).to.lte(lastPuffsGot);
@@ -170,24 +173,26 @@ describe("FoMoXD", function () {
 
       describe("Puffs Price", function () {
         it("Should be able to buy X puffs with predictable price", async function () {
-          const { foMoXD, snapshot, player1, player2, player3, otherAccount } =
-            await loadFixture(deployFoMoFixture);
+          const { foMoXD, snapshot, player1 } = await loadFixture(
+            deployFoMoFixture
+          );
           const puffsQty = 5n * 10n ** 18n;
           const value = await foMoXD.iWantXPuffs(puffsQty);
           await foMoXD.activate();
           /* ------------------------ Puffs ----------------------- */
-          await foMoXD.connect(player1).buyPuffXAddr(Teams.CHOCO, {
+          await foMoXD.connect(player1).buyXid(Teams.CHOCO, 0, {
             value,
           });
           await foMoXD.connect(player1).playerIDxAddr_(player1.address);
           let { player_, playerRoundsData_ } = await snapshot.getPlayerSnapshot(
             1,
-            1
+            2
           );
           const { eth, puffs, mask } = playerRoundsData_;
           expect(eth).to.equal(value);
           expect(puffs).to.equal(puffsQty);
           expect(mask).to.equal(0);
+          return;
         });
       });
 
@@ -204,7 +209,7 @@ describe("FoMoXD", function () {
             const value = await foMoXD.iWantXPuffs(
               BigInt(puffsQty) * 10n ** 18n
             );
-            await foMoXD.connect(player1).buyPuffXAddr(Teams.CHOCO, {
+            await foMoXD.connect(player1).buyXid(Teams.CHOCO, 0, {
               value: value,
             });
             const timeLeftAfterPurchases = await foMoXD.getTimeLeft();
@@ -218,7 +223,7 @@ describe("FoMoXD", function () {
               roundData;
             expect(ended).to.eql(false);
             expect(+winnerTeamId).to.eql(0);
-            expect(+winnerId).to.eql(1);
+            expect(+winnerId).to.eql(2);
             expect(endTime).to.gte(startTime);
           }
         });
@@ -229,25 +234,25 @@ describe("FoMoXD", function () {
           );
           await foMoXD.activate();
           const value = await foMoXD.iWantXPuffs(BigInt(1) * 10n ** 18n);
-          await foMoXD.connect(player1).buyPuffXAddr(Teams.BANA, {
+          await foMoXD.connect(player1).buyXid(Teams.BANA, 0, {
             value: value,
           });
           let roundData = await snapshot.getRoundSnapshot(1);
           let { winnerId, winnerTeamId, endTime, ended, startTime } = roundData;
           expect(ended).to.eql(false);
           expect(+winnerTeamId).to.eql(1);
-          expect(+winnerId).to.eql(1);
+          expect(+winnerId).to.eql(2);
           expect(endTime).to.gte(startTime);
 
           await time.increase(10 * 60);
 
           const triggerEndRoundTx = await foMoXD
             .connect(player2)
-            .buyPuffXAddr(Teams.CHOCO, {
+            .buyXid(Teams.CHOCO, 0, {
               value: value,
             });
           let { player_: player_2, playerRoundsData_: playerRoundsData_2 } =
-            await snapshot.getPlayerSnapshot(1, 2);
+            await snapshot.getPlayerSnapshot(1, 3);
           await expect(triggerEndRoundTx).to.emit(foMoXD, "onEndRound");
 
           // Should add player2 msg.value to generalVault
@@ -255,7 +260,7 @@ describe("FoMoXD", function () {
           roundData = await snapshot.getRoundSnapshot(1);
           ({ winnerId, winnerTeamId, endTime, ended, startTime } = roundData);
 
-          expect(winnerId).to.equal(1);
+          expect(winnerId).to.equal(2);
           expect(winnerTeamId).to.equal(Teams.BANA);
           expect(ended).to.equal(true);
         });
@@ -266,12 +271,14 @@ describe("FoMoXD", function () {
           let lastEth;
           let lastPuffs;
           let lastMask;
-          const { foMoXD, snapshot } = await loadFixture(deployFoMoFixture);
+          const { foMoXD, snapshot, player1 } = await loadFixture(
+            deployFoMoFixture
+          );
           await foMoXD.activate();
           const players = await ethers.getSigners();
           for (const [index, p] of players.entries()) {
             const depositETHAmount = +parseUnits("1000", "gwei") + 1;
-            await foMoXD.connect(p).buyPuffXAddr(Teams.CHOCO, {
+            await foMoXD.connect(p).buyPuffXAddr(Teams.CHOCO, player1.address, {
               value: depositETHAmount,
             });
             let { playerRoundsData_ } = await snapshot.getPlayerSnapshot(
@@ -289,7 +296,7 @@ describe("FoMoXD", function () {
               : playerRoundsData_.mask;
           }
           const roundData = await snapshot.getRoundSnapshot(1);
-          expect(roundData.puffs).to.lte(lastPuffs); // 精度差異
+          expect(roundData.puffs).to.lte(lastPuffs);
           expect(roundData.eth).to.equal(lastEth);
           expect(roundData.mask).to.gte(lastMask);
         });
@@ -307,7 +314,7 @@ describe("FoMoXD", function () {
         await mockedNumOracle.mock.isAirdropNfts.returns(false);
         await foMoXD.activate();
         await expect(
-          foMoXD.connect(player1).buyPuffXAddr(Teams.CHOCO, {
+          foMoXD.connect(player1).buyXid(Teams.CHOCO, 0, {
             value: parseUnits("1", "ether"),
           })
         ).to.emit(foMoXD, "onBuyPuff");
@@ -321,7 +328,7 @@ describe("FoMoXD", function () {
           await mockedNumOracle.mock.isAirdrop.returns(true);
           await foMoXD.activate();
           await expect(
-            foMoXD.connect(player1).buyPuffXAddr(Teams.CHOCO, {
+            foMoXD.connect(player1).buyXid(Teams.CHOCO, 0, {
               value: parseUnits("1", "ether"),
             })
           ).to.emit(foMoXD, "onEthAirdrop");
@@ -333,7 +340,7 @@ describe("FoMoXD", function () {
           await mockedNumOracle.mock.isAirdropNfts.returns(true);
           await foMoXD.activate();
           await expect(
-            foMoXD.connect(player1).buyPuffXAddr(Teams.CHOCO, {
+            foMoXD.connect(player1).buyXid(Teams.CHOCO, 0, {
               value: parseUnits("1", "ether"),
             })
           ).to.emit(foMoXD, "onNftAirdrop");
@@ -357,13 +364,13 @@ describe("FoMoXD", function () {
         await foMoXD.activate();
         /* ------------------------ Puffs ----------------------- */
         const depositETHAmount = parseUnits("1", "ether");
-        await foMoXD.connect(player1).buyPuffXAddr(Teams.CHOCO, {
+        await foMoXD.connect(player1).buyXid(Teams.CHOCO, 0, {
           value: depositETHAmount,
         });
         let {
           player_: player_XWithdraw,
           playerRoundsData_: playerRoundsData__XWithdraw,
-        } = await snapshot.getPlayerSnapshot(1, 1);
+        } = await snapshot.getPlayerSnapshot(1, 2);
         await foMoXD.connect(player1).withdraw();
         let { eth, puffs, mask } = playerRoundsData__XWithdraw;
         expect(eth).to.equal(depositETHAmount);
@@ -375,7 +382,7 @@ describe("FoMoXD", function () {
         let {
           player_: player_HasWithdraw,
           playerRoundsData_: playerRoundsData_HasWithdraw,
-        } = await snapshot.getPlayerSnapshot(1, 1);
+        } = await snapshot.getPlayerSnapshot(1, 2);
         ({ eth, puffs, mask } = playerRoundsData_HasWithdraw);
         expect(eth).to.equal(depositETHAmount);
         expect(mask).to.gte(0);
@@ -391,7 +398,7 @@ describe("FoMoXD", function () {
         );
         await foMoXD.activate();
         const depositETHAmount = parseUnits("1", "ether");
-        await foMoXD.connect(player1).buyPuffXAddr(Teams.CHOCO, {
+        await foMoXD.connect(player1).buyXid(Teams.CHOCO, 0, {
           value: depositETHAmount,
         });
         await expect(foMoXD.withdraw()).to.emit(foMoXD, "onWithdraw");

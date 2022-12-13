@@ -30,6 +30,7 @@ contract Community is ICommunity {
         require(isOwner[msg.sender], "not owner");
         _;
     }
+
     modifier txExists(uint256 _txId) {
         require(_txId < transactions.length, "tx does not exist");
         _;
@@ -122,5 +123,9 @@ contract Community is ICommunity {
                 count += 1;
             }
         }
+    }
+
+    function isDev(address _who) external view returns (bool) {
+        return isOwner[_who];
     }
 }

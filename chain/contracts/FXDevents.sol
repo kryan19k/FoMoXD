@@ -3,7 +3,17 @@ pragma solidity ^0.8.17;
 import "./library/FXDdatasets.sol";
 
 contract FXDevents {
-    event NewEndTime(uint256 timeStamp);
+    event onNewName(
+        uint256 indexed playerID,
+        address indexed playerAddress,
+        bytes32 indexed playerName,
+        bool isNewPlayer,
+        uint256 affiliateID,
+        address affiliateAddress,
+        bytes32 affiliateName,
+        uint256 amountPaid,
+        uint256 timeStamp
+    );
 
     event onWithdraw(
         uint256 indexed playerID,

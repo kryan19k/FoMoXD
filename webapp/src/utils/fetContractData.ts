@@ -253,6 +253,16 @@ export default class GameHelper {
         // await this.fetchNewRound(this.roundId);
       });
 
+    await this.fomoXdContract
+      .getPastEvents('onEndRound', {
+        filter: { playerAddr: this.account },
+        fromBlock: 0,
+        toBlock: 'latest'
+      })
+      .then(async (events: any) => {
+        console.log('✅ onEndRound!', events);
+      });
+
     const onWithdraw = this.fomoXdContract.events.onWithdraw().on('data', (event: any) => {
       if (event?.returnValues?.playerAddress !== this.account) {
         Toast.fire({
