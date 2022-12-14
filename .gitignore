@@ -1,7 +1,13 @@
-node_modules
 .env
+
+# Coverage
 coverage
 coverage.json
+
+# Modules
+node_modules
+
+# Types
 typechain
 typechain-types
 
@@ -10,4 +16,5 @@ cache
 artifacts
 .openzeppelin
 
+# Build
 build

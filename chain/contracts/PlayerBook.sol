@@ -5,6 +5,7 @@ import "./interface/ICommunity.sol";
 import "./interface/IPlayerBookReceiver.sol";
 
 import "./library/NameFilter.sol";
+import "hardhat/console.sol";
 
 contract PlayerBook {
     /* ------------------------------------------------------ */
@@ -18,7 +19,7 @@ contract PlayerBook {
     /* ------------------------------------------------------ */
     /*                      CONFIGURATION                     */
     /* ------------------------------------------------------ */
-    uint256 public registrationFee_ = 100000000000 gwei;
+    uint256 public registrationFee_ = 1 gwei;
 
     uint256 public pID_; // total number of players
     uint256 public gID_; // total number of games
@@ -198,9 +199,12 @@ contract PlayerBook {
         Community_.deposit{value: address(this).balance}();
 
         // push player info to games
-        if (_all == true)
-            for (uint256 i = 1; i <= gID_; i++)
+        if (_all == true) {
+            for (uint256 i = 1; i <= gID_; i++) {
+                console.log("Gmea~~~", i);
                 games_[i].receivePlayerInfo(_pID, _addr, _name, _affID);
+            }
+        }
 
         // fire event
         emit onNewName(

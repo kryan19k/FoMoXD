@@ -69,7 +69,9 @@ describe("FoMoXD", function () {
       mockedNumOracle.address
     );
 
-    await foMoXD.connect(owner).setOtherFomo(otherFoMo.address);
+    await foMoXD.setOtherFomo(otherFoMo.address);
+
+    await playerBook.addGame(foMoXD.address, "FoMoXDTest");
 
     const snapshot = new SnapshotHepler(foMoXD);
 
@@ -353,6 +355,30 @@ describe("FoMoXD", function () {
     // describe("Transfers", function () {
     //   it("Should transfer the funds to the owner", async function () {});
     // });
+  });
+
+  describe("Affiliate", function () {
+    describe("States", function () {
+      it("Should be able to register name", async function () {
+        const { foMoXD, player1 } = await loadFixture(deployFoMoFixture);
+        const nameToRegister = "imTestName".toLocaleLowerCase();
+        const registerNameTx = await foMoXD
+          .connect(player1)
+          .registerNameXID(nameToRegister, 0, true, {
+            value: parseUnits("1", "ether"),
+          });
+
+        const pID = await foMoXD.playerIDxAddr_(player1.address);
+        const bytesName = ethers.utils.formatBytes32String(nameToRegister);
+
+        const pIDGetByName = await foMoXD.pIDxName_(bytesName);
+        const isPlayerHasName = await foMoXD.plyrNames_(pID, bytesName);
+
+        expect(registerNameTx).to.emit(foMoXD, "onNewName");
+        expect(pIDGetByName).to.equal(pID);
+        expect(isPlayerHasName).to.equal(true);
+      });
+    });
   });
 
   describe("Withdraw", function () {

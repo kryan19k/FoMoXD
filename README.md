@@ -139,6 +139,7 @@ flowchart LR
 
 # Credits
 - [Style Guide](https://docs.soliditylang.org/en/v0.8.17/common-patterns.html)
+- [FoMo3D](https://github.com/reedhong/fomo3d_clone)
 
 ### NFT Images
 - <https://giventofly.github.io/pixelit/>

@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-ethers";
 import * as dotenv from "dotenv";
 
 const { API_URL, PRIVATE_KEY, ETHERSCAN_API_KEY, API_KEY } = process.env;
+
 const config: HardhatUserConfig = {
   solidity: "0.8.17",
   defaultNetwork: "localhost",

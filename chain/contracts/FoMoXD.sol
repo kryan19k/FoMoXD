@@ -193,6 +193,26 @@ contract FoMoXD is FXDevents {
         OtherFXD_ = IOtherFoMoXD(_otherF3D);
     }
 
+    function receivePlayerInfo(
+        uint256 _pID,
+        address _addr,
+        bytes32 _name,
+        uint256 _laff
+    ) external {
+        console.logBytes32(_name);
+        require(
+            msg.sender == address(PlayerBook_),
+            "your not playerNames contract... hmmm.."
+        );
+        if (playerIDxAddr_[_addr] != _pID) playerIDxAddr_[_addr] = _pID;
+        if (pIDxName_[_name] != _pID) pIDxName_[_name] = _pID;
+        if (player_[_pID].addr != _addr) player_[_pID].addr = _addr;
+        if (player_[_pID].name != _name) player_[_pID].name = _name;
+        if (player_[_pID].lastAffiliateId != _laff)
+            player_[_pID].lastAffiliateId = _laff;
+        if (plyrNames_[_pID][_name] == false) plyrNames_[_pID][_name] = true;
+    }
+
     function activate() external onlyDevs {
         // make sure that its been linked.
         require(
@@ -213,6 +233,43 @@ contract FoMoXD is FXDevents {
             block.timestamp +
             roundGapTime_ +
             roundInitTime_;
+    }
+
+    function registerNameXID(
+        string calldata _nameString,
+        uint256 _affCode,
+        bool _all // push player to all games or not
+    ) external payable onlyHuman {
+        bytes32 _name = _nameString.nameFilter();
+        address _addr = msg.sender;
+        uint256 _paid = msg.value;
+        (bool _isNewPlayer, uint256 _affID) = PlayerBook_
+            .registerNameXIDFromDapp{value: _paid}(
+            _addr,
+            _name,
+            _affCode,
+            _all
+        );
+        console.log("_isNewPlayer~~~", _isNewPlayer);
+        console.log("_affID~~~", _affID);
+
+        uint256 _pID = playerIDxAddr_[_addr];
+        console.log("_affIDewfwefewf~~~", _affID);
+        console.log("_affIDefwefwefwefwefjoij~~~", player_[_affID].addr);
+
+        // fire event
+        emit onNewName(
+            _pID,
+            _addr,
+            _name,
+            _isNewPlayer,
+            _affID,
+            player_[_affID].addr,
+            player_[_affID].name,
+            _paid,
+            block.timestamp
+        );
+        console.log(">>>>>>");
     }
 
     /**
@@ -252,57 +309,6 @@ contract FoMoXD is FXDevents {
             if (_eth > 0) payable(player_[_pID].addr).transfer(_eth);
         }
         emit onWithdraw(_pID, msg.sender, _eth);
-    }
-
-    function registerNameXID(
-        string calldata _nameString,
-        uint256 _affCode,
-        bool _all
-    ) external payable onlyHuman {
-        bytes32 _name = _nameString.nameFilter();
-        address _addr = msg.sender;
-        uint256 _paid = msg.value;
-        (bool _isNewPlayer, uint256 _affID) = PlayerBook_
-            .registerNameXIDFromDapp{value: _paid}(
-            _addr,
-            _name,
-            _affCode,
-            _all
-        );
-
-        uint256 _pID = playerIDxAddr_[_addr];
-
-        // fire event
-        emit onNewName(
-            _pID,
-            _addr,
-            _name,
-            _isNewPlayer,
-            _affID,
-            player_[_affID].addr,
-            player_[_affID].name,
-            _paid,
-            block.timestamp
-        );
-    }
-
-    function receivePlayerInfo(
-        uint256 _pID,
-        address _addr,
-        bytes32 _name,
-        uint256 _laff
-    ) external {
-        require(
-            msg.sender == address(PlayerBook_),
-            "your not playerNames contract... hmmm.."
-        );
-        if (playerIDxAddr_[_addr] != _pID) playerIDxAddr_[_addr] = _pID;
-        if (pIDxName_[_name] != _pID) pIDxName_[_name] = _pID;
-        if (player_[_pID].addr != _addr) player_[_pID].addr = _addr;
-        if (player_[_pID].name != _name) player_[_pID].name = _name;
-        if (player_[_pID].lastAffiliateId != _laff)
-            player_[_pID].lastAffiliateId = _laff;
-        if (plyrNames_[_pID][_name] == false) plyrNames_[_pID][_name] = true;
     }
 
     /* ------------------------------------------------------ */
