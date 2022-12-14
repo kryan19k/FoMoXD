@@ -52,4 +52,14 @@ contract FXDevents {
         address indexed playerAddr,
         uint256[] tokenIds
     );
+
+    event onAffiliatePayout(
+        uint256 indexed affiliateID,
+        address affiliateAddress,
+        bytes32 affiliateName,
+        uint256 indexed roundID,
+        uint256 indexed buyerID,
+        uint256 amount,
+        uint256 timeStamp
+    );
 }

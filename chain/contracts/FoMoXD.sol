@@ -199,7 +199,6 @@ contract FoMoXD is FXDevents {
         bytes32 _name,
         uint256 _laff
     ) external {
-        console.logBytes32(_name);
         require(
             msg.sender == address(PlayerBook_),
             "your not playerNames contract... hmmm.."
@@ -325,11 +324,9 @@ contract FoMoXD is FXDevents {
         isWithinLimits(msg.value)
         returns (uint256 _playerID)
     {
-        determinePID();
-        uint256 _playerID = playerIDxAddr_[msg.sender];
+        uint256 _playerID = determinePID();
         // manage affiliate residuals
         uint256 _affID;
-        // if no affiliate code was given or player tried to use their own, lolz
         if (_affCode == address(0) || _affCode == msg.sender) {
             // use last stored affiliate code
             _affID = player_[_playerID].lastAffiliateId;
@@ -338,7 +335,6 @@ contract FoMoXD is FXDevents {
         } else {
             // get affiliate ID from aff Code
             _affID = playerIDxAddr_[_affCode];
-
             // if affID is not the same as previously stored
             if (_affID != player_[_playerID].lastAffiliateId) {
                 // update last affiliate
@@ -357,10 +353,8 @@ contract FoMoXD is FXDevents {
         bytes32 _affCode
     ) external payable isActivated onlyHuman isWithinLimits(msg.value) {
         // set up our tx event data and determine if player is new or not
-        determinePID();
-
         // fetch player id
-        uint256 _pID = playerIDxAddr_[msg.sender];
+        uint256 _pID = determinePID();
 
         // manage affiliate residuals
         uint256 _affID;
@@ -394,10 +388,8 @@ contract FoMoXD is FXDevents {
         uint256 _affCode
     ) public payable isActivated onlyHuman isWithinLimits(msg.value) {
         // set up our tx event data and determine if player is new or not
-        determinePID();
-
         // fetch player id
-        uint256 _pID = playerIDxAddr_[msg.sender];
+        uint256 _pID = determinePID();
 
         // manage affiliate residuals
         // if no affiliate code was given or player tried to use their own, lolz
@@ -623,7 +615,7 @@ contract FoMoXD is FXDevents {
             _now <= roundData_[_rID].endTime ||
             (_now > roundData_[_rID].endTime && roundData_[_rID].winnerId == 0)
         ) {
-            _buyPuffCore(_rID, _playerID, msg.value, _team);
+            _buyPuffCore(_rID, _playerID, msg.value, _team, _affID);
         } else {
             if (
                 _now > roundData_[_rID].endTime &&
@@ -670,7 +662,8 @@ contract FoMoXD is FXDevents {
         uint256 _rID,
         uint256 _pID,
         uint256 _eth,
-        FXDdatasets.Teams _teamID
+        FXDdatasets.Teams _teamID,
+        uint256 _affID
     ) private {
         /* -------------- if player is new to round ------------- */
         if (playerRoundsData_[_pID][_rID].puffs == 0) {
@@ -688,7 +681,7 @@ contract FoMoXD is FXDevents {
             _eth = _availableLimit;
         }
         require(
-            _eth > minETHAllowed_,
+            _eth >= minETHAllowed_,
             "pocket lint: eth left is greater than min eth allowed (sorry no pocket lint)"
         );
 
@@ -743,7 +736,7 @@ contract FoMoXD is FXDevents {
             uint256 _communityShare,
             uint256 _p3dShare,
             uint256 _otherPXDShare
-        ) = distributeExternal(_rID, _pID, _eth, _teamID);
+        ) = distributeExternal(_rID, _pID, _eth, _teamID, _affID);
 
         (
             uint256 _generalShare,
@@ -887,39 +880,38 @@ contract FoMoXD is FXDevents {
         uint256 _rID,
         uint256 _pID,
         uint256 _eth,
-        FXDdatasets.Teams _team // uint256 _affID,
+        FXDdatasets.Teams _team,
+        uint256 _affID
     ) private returns (uint256, uint256, uint256) {
         // pay 2% out to community rewards
         uint256 _communityShare = (_eth * 2) / 100;
         uint256 _p3dShare;
-        if (
-            // ✅ 分錢 1：轉錢給基金會
-            !Community_.deposit{value: _communityShare}()
-        ) {
-            // This ensures Team Just cannot influence the outcome of FoMo3D with
-            // bank migrations by breaking outgoing transactions.
-            // Something we would never do. But that's not the point.
-            // We spent 2000$ in eth re-deploying just to patch this, we hold the
-            // highest belief that everything we create should be trustless.
-            // Team JUST, The name you shouldn't have to trust.
+        if (!Community_.deposit{value: _communityShare}()) {
             _p3dShare = _communityShare;
             _communityShare = 0;
         }
-        // ✅ 分錢 2：轉錢給 otherF3D，官方寫是要給 FoMo3D short
+
         // pay 1% out to FoMo3D short
         uint256 _otherPXDShare = _eth / 100;
         OtherFXD_.potSwap{value: _otherPXDShare}();
 
-        // // distribute share to affiliate
-        // uint256 _aff = _eth / 10;
+        // distribute share to affiliate
+        uint256 _aff = _eth / 10;
 
-        // // decide what to do with affiliate share of fees
-        // // affiliate must not be self, and must have a name registered
-        // if (_affID != _pID && player_[_affID].name != "") {
-        //     player_[_affID].aff += _aff;
-        // } else {
-        //     _p3d = _aff;
-        // }
+        if (_affID != _pID && player_[_affID].name != "") {
+            player_[_affID].affiliateVault += _aff;
+            emit onAffiliatePayout(
+                _affID,
+                player_[_affID].addr,
+                player_[_affID].name,
+                _rID,
+                _pID,
+                _aff,
+                block.timestamp
+            );
+        } else {
+            _p3dShare = _aff;
+        }
 
         // pay out pXd
         _p3dShare += ((_eth * (fees_[_team].pXdShare)) / (100));
@@ -1019,6 +1011,7 @@ contract FoMoXD is FXDevents {
 
             // if (_laff != 0 && _laff != _pID) player_[_pID].laff = _laff;
         }
+        return _pID;
     }
 
     /**

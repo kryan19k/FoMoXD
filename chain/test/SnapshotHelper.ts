@@ -3,7 +3,7 @@ import { FoMoXD } from "../typechain-types";
 interface PlayerRounds {
   eth: number; // eth player has added to round (used for eth limiter)
   puffs: number; // puffs
-  mask: number; // player mask TODO: 不知道這是做啥
+  mask: number; // player mask (earn)
 }
 
 export default class SnapshotHepler {

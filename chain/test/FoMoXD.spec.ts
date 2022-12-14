@@ -12,11 +12,13 @@ describe("FoMoXD", function () {
   async function deployFoMoFixture() {
     const [owner, player1, player2, player3, dev1, dev2, otherAccount] =
       await ethers.getSigners();
+
     const FoMoERC20 = await ethers.getContractFactory("FoMoERC20");
     const foMoERC20 = await FoMoERC20.deploy(10 ** 6, "FoMoERC20", "FXD");
 
     const FOMOERC721_MYSTERY_BOX_IMAGE_URI =
       "https://ipfs.io/ipfs/egqoirncqioryqeogejxuxthoqh4q/";
+
     const FoMoERC721 = await ethers.getContractFactory("FoMoERC721");
     const foMoERC721 = await upgrades.deployProxy(FoMoERC721, [
       "fomoERC721",
@@ -52,6 +54,7 @@ describe("FoMoXD", function () {
       divies.address,
       mockedNumOracle.address
     );
+
     await mockedNumOracle.mock.setFoMoGame.returns();
     await mockedNumOracle.setFoMoGame(foMoXD.address);
     await mockedNumOracle.mock.isAirdrop.returns(false);
@@ -377,6 +380,164 @@ describe("FoMoXD", function () {
         expect(registerNameTx).to.emit(foMoXD, "onNewName");
         expect(pIDGetByName).to.equal(pID);
         expect(isPlayerHasName).to.equal(true);
+      });
+
+      it("Should change player affiliate ID when buy with buyXname", async function () {
+        const { foMoXD, player1, player2, player3, snapshot } =
+          await loadFixture(deployFoMoFixture);
+        const affName = "imTestName".toLocaleLowerCase();
+        const bytesName = ethers.utils.formatBytes32String(affName);
+        const affName2 = "imTestName2".toLocaleLowerCase();
+        const bytesName2 = ethers.utils.formatBytes32String(affName2);
+
+        await foMoXD.connect(player1).registerNameXID(affName, 0, true, {
+          value: parseUnits("1", "ether"),
+        });
+        await foMoXD.connect(player2).registerNameXID(affName2, 0, true, {
+          value: parseUnits("1", "ether"),
+        });
+
+        await foMoXD.activate();
+
+        const depositETHAmount = parseUnits("2", "gwei");
+        await foMoXD.connect(player3).buyXname(Teams.CHOCO, bytesName, {
+          value: depositETHAmount,
+        });
+        let { player_ } = await snapshot.getPlayerSnapshot(1, 4);
+        expect(player_.lastAffiliateId).to.equal(2);
+
+        await foMoXD.connect(player3).buyXname(Teams.CHOCO, bytesName2, {
+          value: depositETHAmount,
+        });
+        ({ player_ } = await snapshot.getPlayerSnapshot(1, 4));
+        expect(player_.lastAffiliateId).to.equal(3);
+      });
+
+      it("Should change player affiliate ID when buy with buyXid", async function () {
+        const { foMoXD, player1, player2, player3, snapshot } =
+          await loadFixture(deployFoMoFixture);
+
+        await foMoXD.activate();
+
+        await foMoXD.connect(player1).buyXid(0, 0, {
+          value: parseUnits("1", "ether"),
+        });
+        await foMoXD.connect(player2).buyXid(0, 0, {
+          value: parseUnits("1", "ether"),
+        });
+
+        const depositETHAmount = parseUnits("2", "gwei");
+        await foMoXD.connect(player3).buyXid(Teams.CHOCO, 2, {
+          value: depositETHAmount,
+        });
+        let { player_ } = await snapshot.getPlayerSnapshot(1, 4);
+        expect(player_.lastAffiliateId).to.equal(2);
+
+        await foMoXD.connect(player3).buyXid(Teams.CHOCO, 3, {
+          value: depositETHAmount,
+        });
+        ({ player_ } = await snapshot.getPlayerSnapshot(1, 4));
+        expect(player_.lastAffiliateId).to.equal(3);
+      });
+
+      it("Should change player affiliate ID when buy with buyPuffXAddr", async function () {
+        const { foMoXD, player1, player2, player3, snapshot } =
+          await loadFixture(deployFoMoFixture);
+
+        await foMoXD.activate();
+
+        await foMoXD.connect(player1).buyXid(0, 0, {
+          value: parseUnits("1", "ether"),
+        });
+        await foMoXD.connect(player2).buyXid(0, 0, {
+          value: parseUnits("1", "ether"),
+        });
+
+        const depositETHAmount = parseUnits("2", "gwei");
+
+        await foMoXD
+          .connect(player3)
+          .buyPuffXAddr(Teams.CHOCO, player1.address, {
+            value: depositETHAmount,
+          });
+
+        const player3Id = await foMoXD.playerIDxAddr_(player3.address);
+        let { player_ } = await snapshot.getPlayerSnapshot(1, +player3Id);
+
+        expect(player_.lastAffiliateId).to.equal(2);
+
+        await foMoXD
+          .connect(player3)
+          .buyPuffXAddr(Teams.CHOCO, player2.address, {
+            value: depositETHAmount,
+          });
+
+        ({ player_ } = await snapshot.getPlayerSnapshot(1, +player3Id));
+        expect(player_.lastAffiliateId).to.equal(3);
+      });
+    });
+
+    describe("Events", function () {
+      it("Should change player affiliate ID when buy with buyXname", async function () {
+        const { foMoXD, player1, player3, snapshot } = await loadFixture(
+          deployFoMoFixture
+        );
+        const affName = "imTestName".toLocaleLowerCase();
+        const bytesName = ethers.utils.formatBytes32String(affName);
+
+        await foMoXD.connect(player1).registerNameXID(affName, 0, true, {
+          value: parseUnits("1", "ether"),
+        });
+
+        await foMoXD.activate();
+
+        const depositETHAmount = parseUnits("2", "gwei");
+
+        const buyTx = await foMoXD
+          .connect(player3)
+          .buyXname(Teams.CHOCO, bytesName, {
+            value: depositETHAmount,
+          });
+
+        expect(buyTx).to.emit(foMoXD, "onAffiliatePayout");
+      });
+
+      it("Should change player affiliate ID when buy with buyXid", async function () {
+        const { foMoXD, player1, player2, player3, snapshot } =
+          await loadFixture(deployFoMoFixture);
+
+        await foMoXD.activate();
+
+        await foMoXD.connect(player1).buyXid(0, 0, {
+          value: parseUnits("1", "ether"),
+        });
+
+        const depositETHAmount = parseUnits("2", "gwei");
+        const buyTx = await foMoXD.connect(player3).buyXid(Teams.CHOCO, 2, {
+          value: depositETHAmount,
+        });
+
+        expect(buyTx).to.emit(foMoXD, "onAffiliatePayout");
+      });
+
+      it("Should change player affiliate ID when buy with buyPuffXAddr", async function () {
+        const { foMoXD, player1, player2, player3, snapshot } =
+          await loadFixture(deployFoMoFixture);
+
+        await foMoXD.activate();
+
+        await foMoXD.connect(player1).buyXid(0, 0, {
+          value: parseUnits("1", "ether"),
+        });
+
+        const depositETHAmount = parseUnits("2", "gwei");
+
+        const buyTx = await foMoXD
+          .connect(player3)
+          .buyPuffXAddr(Teams.CHOCO, player1.address, {
+            value: depositETHAmount,
+          });
+        expect(buyTx).to.emit(foMoXD, "onAffiliatePayout");
       });
     });
   });
