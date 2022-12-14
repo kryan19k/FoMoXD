@@ -24,21 +24,20 @@ async function main() {
   await foMoERC721.setBaseURI("http://localhost:3000/nfts/json/");
 
   console.log(`[FoMoERC721] Deployed to ${foMoERC721.address}`);
-
-  /* --------------------- PlayerBook --------------------- */
-  const PlayerBook = await ethers.getContractFactory("PlayerBook");
-  const playerBook = await PlayerBook.deploy();
-  console.log(`[PlayerBook] Deployed to ${playerBook.address}`);
-  /* ----------------------- Divies ----------------------- */
-  const Divies = await ethers.getContractFactory("Divies");
-  const divies = await Divies.deploy();
-  console.log(`[Divies] Deployed to ${divies.address}`);
   /* ---------------------- Community --------------------- */
   const Community = await ethers.getContractFactory("Community");
   const community = await Community.deploy(
     [deployer.address, dev1.address, dev2.address],
     2
   );
+  /* --------------------- PlayerBook --------------------- */
+  const PlayerBook = await ethers.getContractFactory("PlayerBook");
+  const playerBook = await PlayerBook.deploy(community.address);
+  console.log(`[PlayerBook] Deployed to ${playerBook.address}`);
+  /* ----------------------- Divies ----------------------- */
+  const Divies = await ethers.getContractFactory("Divies");
+  const divies = await Divies.deploy();
+  console.log(`[Divies] Deployed to ${divies.address}`);
   console.log(`[Community] Deployed to ${community.address}`);
   /* ----------------------- Oracle ----------------------- */
   const NumOracle = await ethers.getContractFactory("SimpleNumOracle");
@@ -68,6 +67,7 @@ async function main() {
   await foMoXD.setOtherFomo(otherFoMo.address);
   await numOracle.setFoMoGame(foMoXD.address);
   await foMoERC721.setFoMoGame(foMoXD.address);
+  await playerBook.addGame(foMoXD.address, "FoMoXDTest");
   // TODO: Just For testing
   await foMoXD.activate();
 }

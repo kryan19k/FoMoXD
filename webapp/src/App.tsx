@@ -32,7 +32,7 @@ function addItem(type: string, device: any) {
 
 const App: React.FC = () => {
   const onSubmit = (device: any) => {
-    if (window.location.pathname === '/exitScam') {
+    if (window.location.pathname === '/exit-scam') {
       addItem('teams', { id: Math.random(), onOff: true, ...device });
     }
     if (window.location.pathname === '/nfts') {
@@ -49,7 +49,10 @@ const App: React.FC = () => {
         <GameProvider>
           <Layout onSubmit={onSubmit}>
             <Switch>
-              <Route path="/exitScam" exact component={GamesPage}></Route>
+              <Route path="/exit-scam" exact component={GamesPage}></Route>
+              <Route path="/bad-advice/id/:id" component={GamesPage}></Route>
+              <Route path="/bad-advice/address/:address" component={GamesPage}></Route>
+              <Route path="/bad-advice/name/:name" component={GamesPage}></Route>
               <Route path="/nfts" component={NftsPage}></Route>
               <Route path="/" component={GamesPage}></Route>
             </Switch>

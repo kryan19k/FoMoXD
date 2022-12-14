@@ -51,6 +51,36 @@ const createWeb3State = (props: Web3State) => {
   return result;
 };
 
+async function connect(provider: any) {
+  try {
+    await provider.request({ method: 'eth_requestAccounts' });
+    Toast.fire({
+      icon: 'success',
+      title: '🦊 Connected in successfully'
+    });
+  } catch (error) {
+    Toast.fire({
+      icon: 'error',
+      title: 'Can not connect to metamask, try to reload your browser please.'
+    });
+    // window.location.reload();
+  }
+}
+
+async function switchNetwork(provider: any) {
+  try {
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x' + (31337).toString(16) }]
+    });
+  } catch (error) {
+    Toast.fire({
+      icon: 'error',
+      title: 'Fail to switch network!'
+    });
+  }
+}
+
 let lastAcoount = '';
 export default function Web3Provider(props: any) {
   const { children } = props;
@@ -73,6 +103,8 @@ export default function Web3Provider(props: any) {
       const provider =
         ((await detectEthereumProvider()) as any) ||
         new Web3.providers.HttpProvider(REACT_APP_RPC_URL as string);
+      await connect(provider);
+      await switchNetwork(provider);
       const web3 = new Web3(provider);
       const fomoXdContract = await loadContractWithAddress(
         'FoMoXD',
@@ -175,19 +207,7 @@ export default function Web3Provider(props: any) {
       requireInstall: !isLoading && !web3,
       connect: provider
         ? async () => {
-            try {
-              await provider.request({ method: 'eth_requestAccounts' });
-              Toast.fire({
-                icon: 'success',
-                title: '🦊 Connected in successfully'
-              });
-            } catch (error) {
-              Toast.fire({
-                icon: 'error',
-                title: 'Can not connect to metamask, try to reload your browser please.'
-              });
-              // window.location.reload();
-            }
+            await connect(provider);
           }
         : () => {
             Toast.fire({
@@ -227,17 +247,7 @@ export default function Web3Provider(props: any) {
           },
       switchNetwork: provider
         ? async (chainId: string = '31337') => {
-            try {
-              await provider.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: '0x' + (31337).toString(16) }]
-              });
-            } catch (error) {
-              Toast.fire({
-                icon: 'error',
-                title: 'Fail to switch network!'
-              });
-            }
+            await switchNetwork(provider);
           }
         : () => {
             Toast.fire({

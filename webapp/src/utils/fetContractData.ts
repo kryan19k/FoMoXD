@@ -55,9 +55,19 @@ export default class GameHelper {
     this.foMoERC721 = foMoERC721;
     this.roundId = roundId;
   }
-  async buyPuffs(opt: { activeTeamIndex: number; puffsToETH: number; wantXPuffs: any }) {
-    const { wantXPuffs, activeTeamIndex, puffsToETH } = opt;
+  async buyPuffs(opt: {
+    activeTeamIndex: number;
+    puffsToETH: number;
+    wantXPuffs: any;
+    aff?: {
+      address?: string;
+      name?: string;
+      id?: number;
+    };
+  }) {
+    const { wantXPuffs, activeTeamIndex, puffsToETH, aff } = opt;
     new Audio('/sounds/coin.wav').play();
+
     if (wantXPuffs <= 0 || puffsToETH <= 0) {
       Toast.fire({
         icon: 'error',
@@ -91,9 +101,10 @@ export default class GameHelper {
           `
       }).then(async (result) => {
         if (result.isConfirmed) {
-          this.buyPuffXAddr({
+          await this.buyPuff({
             activeTeamIndex,
-            puffsToETH
+            puffsToETH,
+            aff
           });
         } else {
           Swal.fire({
@@ -115,10 +126,24 @@ export default class GameHelper {
     }
   }
 
-  async buyPuffXAddr(opt: { activeTeamIndex: number; puffsToETH: number }) {
-    const { activeTeamIndex, puffsToETH } = opt;
-    await this.fomoXdContract.methods
-      ?.buyPuffXAddr(activeTeamIndex - 1)
+  async buyPuff(opt: {
+    activeTeamIndex: number;
+    puffsToETH: number;
+    aff?: { address?: string; name?: string; id?: number };
+  }) {
+    const { activeTeamIndex, puffsToETH, aff } = opt;
+    let buyX;
+    if (aff?.id) {
+      buyX = this.fomoXdContract.methods?.buyXid(activeTeamIndex - 1, aff?.id);
+    } else if (aff?.address) {
+      buyX = this.fomoXdContract.methods?.buyPuffXAddr(activeTeamIndex - 1, aff?.address);
+    } else if (aff?.name) {
+      buyX = this.fomoXdContract.methods?.buyXname(activeTeamIndex - 1, aff?.name);
+    } else {
+      buyX = this.fomoXdContract.methods?.buyXid(activeTeamIndex - 1, 0);
+    }
+
+    await buyX
       .send({ from: this.account, value: this.web3.utils.toWei(puffsToETH, 'ether') })
       .then((receipt: any) => {
         if (receipt?.events?.onNftAirdrop) {
@@ -295,6 +320,7 @@ export default class GameHelper {
     const onEndRound = this.fomoXdContract.events.onEndRound().on('data', (event: any) => {
       const { roundId, winnerId, winnerTeamId, endTime, generalShare, winnerShare } =
         event?.returnValues;
+
       console.log(
         'onEndRound~~~~',
         roundId,
@@ -304,6 +330,7 @@ export default class GameHelper {
         generalShare,
         winnerShare
       );
+
       if (winnerId == this.playerId) {
         Swal.fire({
           title: `You won the game!`,

@@ -35,7 +35,7 @@ export const GameContext = createContext({
   setRoundData: () => {},
   setActiveTeamIndex: (num: number) => {},
   activeTeamIndex: null,
-  buyPuffs: () => {},
+  buyPuffs: (params?: { aff?: { address?: string; name?: string; id?: number } }) => {},
   wantXPuffs: null,
   setWantXPuffs: () => {},
   puffsToETH: 0,

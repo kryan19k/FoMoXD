@@ -1,3 +1,4 @@
+import { useParams } from 'react-router-dom';
 import Cube from '../components/ui/Cube/Cube';
 import PageHeader from '../components/ui/PageHeader/PageHeader';
 import Tabs from '../components/ui/Tabs/Tabs';
@@ -20,6 +21,7 @@ const Toast = Swal.mixin({
 });
 
 const GamesPage = (props: any) => {
+  const params = useParams();
   const soundContext = useSound();
   const game = useGameData();
   const {
@@ -36,10 +38,12 @@ const GamesPage = (props: any) => {
     withdraw,
     roundId
   } = game;
+
   const teams = JSON.parse(localStorage.getItem('teams') as string);
   const noTeams = <p>Not devices</p>;
   const handleTeamClick = (index: number) => setActiveTeamIndex(index);
   const checkTeamActive = (index: number) => (activeTeamIndex === index ? true : false);
+
   return (
     <div>
       <div className="App">
@@ -69,7 +73,9 @@ const GamesPage = (props: any) => {
               title={activeTeamIndex ? 'Buy Puffs' : 'CHOOSE YOUR TEAM'}
               isShowBuyButton={activeTeamIndex !== 0}
               activeIndex={activeTeamIndex}
-              buyPuffs={buyPuffs}></PageHeader>
+              buyPuffs={() => {
+                buyPuffs({ aff: { ...params } });
+              }}></PageHeader>
             <div className="cube-wrapper">
               {teams.length === 0 && noTeams}
               {teams.length > 0 &&
