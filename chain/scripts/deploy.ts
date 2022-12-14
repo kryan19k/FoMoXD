@@ -21,6 +21,11 @@ async function main() {
     "http://localhost:3000/nfts/json/mystery_1.json"
   );
 
+  await foMoERC721.setRoundMysteryURI(
+    3,
+    "http://localhost:3000/nfts/json/mystery_2.json"
+  );
+
   await foMoERC721.setBaseURI("http://localhost:3000/nfts/json/");
 
   console.log(`[FoMoERC721] Deployed to ${foMoERC721.address}`);
