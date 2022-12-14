@@ -409,6 +409,7 @@ describe("FoMoXD", function () {
         await foMoXD.connect(player3).buyXname(Teams.CHOCO, bytesName2, {
           value: depositETHAmount,
         });
+
         ({ player_ } = await snapshot.getPlayerSnapshot(1, 4));
         expect(player_.lastAffiliateId).to.equal(3);
       });
@@ -473,6 +474,47 @@ describe("FoMoXD", function () {
           });
 
         ({ player_ } = await snapshot.getPlayerSnapshot(1, +player3Id));
+        expect(player_.lastAffiliateId).to.equal(3);
+      });
+
+      it("Affiliate should get reward", async function () {
+        const { foMoXD, player1, player2, player3, snapshot } =
+          await loadFixture(deployFoMoFixture);
+
+        await foMoXD.activate();
+
+        const affName = "imTestName".toLocaleLowerCase();
+        const affName2 = "imTestName2".toLocaleLowerCase();
+
+        await foMoXD.connect(player1).registerNameXID(affName, 0, true, {
+          value: parseUnits("1", "ether"),
+        });
+
+        await foMoXD.connect(player2).registerNameXID(affName2, 0, true, {
+          value: parseUnits("1", "ether"),
+        });
+
+        const depositETHAmount = parseUnits("2", "gwei");
+
+        await foMoXD.connect(player3).buyXid(Teams.CHOCO, 2, {
+          value: depositETHAmount,
+        });
+
+        let { player_ } = await snapshot.getPlayerSnapshot(1, 4);
+
+        expect(player_.lastAffiliateId).to.equal(2);
+
+        ({ player_ } = await snapshot.getPlayerSnapshot(1, 2));
+        expect(player_.affiliateVault).to.gte(0);
+
+        await foMoXD.connect(player3).buyXid(Teams.CHOCO, 3, {
+          value: depositETHAmount,
+        });
+
+        ({ player_ } = await snapshot.getPlayerSnapshot(1, 3));
+        expect(player_.affiliateVault).to.gte(0);
+
+        ({ player_ } = await snapshot.getPlayerSnapshot(1, 4));
         expect(player_.lastAffiliateId).to.equal(3);
       });
     });
