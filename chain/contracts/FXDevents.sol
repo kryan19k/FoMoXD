@@ -3,6 +3,9 @@ pragma solidity ^0.8.17;
 import "./library/FXDdatasets.sol";
 
 contract FXDevents {
+    /* ------------------------------------------------------ */
+    /*                         Events                         */
+    /* ------------------------------------------------------ */
     event onNewName(
         uint256 indexed playerID,
         address indexed playerAddress,

@@ -3,17 +3,27 @@ pragma solidity ^0.8.17;
 
 import "./interface/ICommunity.sol";
 import "./interface/IPlayerBookReceiver.sol";
+
 import "./library/NameFilter.sol";
 
 contract PlayerBook {
+    /* ------------------------------------------------------ */
+    /*                         LIBRARY                        */
+    /* ------------------------------------------------------ */
     using NameFilter for string;
+    /* ------------------------------------------------------ */
+    /*                        CONTRACT
+    /* ------------------------------------------------------ */
+    ICommunity public Community_;
+    /* ------------------------------------------------------ */
+    /*                      CONFIGURATION                     */
+    /* ------------------------------------------------------ */
+    uint256 public registrationFee_ = 100000000000 gwei;
 
     uint256 public pID_; // total number of players
     uint256 public gID_; // total number of games
 
     // price to register a name
-    uint256 public registrationFee_ = 100000000000 gwei;
-    ICommunity public Community_;
 
     struct Player {
         address addr;
@@ -21,6 +31,7 @@ contract PlayerBook {
         uint256 names;
         uint256 laff;
     }
+
     mapping(address => uint256) public gameIDs_; // lokup a games ID
     mapping(address => bytes32) public gameNames_; // lookup a games name
     mapping(uint256 => Player) public player_; // (pID => data) player data
@@ -29,6 +40,10 @@ contract PlayerBook {
     mapping(uint256 => mapping(bytes32 => bool)) public plyrNames_; // (pID => name => bool) list of names a player owns.  (used so you can change your display name amoungst any name you own)
     mapping(uint256 => mapping(uint256 => bytes32)) public plyrNameList_; // (pID => nameNum => name) list of names a player owns
     mapping(uint256 => IPlayerBookReceiver) public games_; // mapping of our game interfaces for sending your account info to games
+
+    /* ------------------------------------------------------ */
+    /*                         EVENTS                         */
+    /* ------------------------------------------------------ */
     event onNewName(
         uint256 indexed playerID,
         address indexed playerAddress,
@@ -40,7 +55,9 @@ contract PlayerBook {
         uint256 amountPaid,
         uint256 timeStamp
     );
-
+    /* ------------------------------------------------------ */
+    /*                        MODIFIER                        */
+    /* ------------------------------------------------------ */
     modifier isRegisteredGame() {
         require(gameIDs_[msg.sender] != 0);
         _;
@@ -54,6 +71,12 @@ contract PlayerBook {
         _;
     }
 
+    /* ------------------------------------------------------ */
+    /*                        FUNCTIONS
+    /* ------------------------------------------------------ */
+    /* ------------------------------------------------------ */
+    /*                       constructor                      */
+    /* ------------------------------------------------------ */
     constructor(ICommunity _community) {
         Community_ = _community;
 
@@ -68,18 +91,9 @@ contract PlayerBook {
         pID_ = 1;
     }
 
-    function determinePID(address _addr) private returns (bool) {
-        if (playerIDxAddr_[_addr] == 0) {
-            pID_++;
-            playerIDxAddr_[_addr] = pID_;
-            player_[pID_].addr = _addr;
-
-            // set the new player bool to true
-            return (true);
-        } else {
-            return (false);
-        }
-    }
+    /* ------------------------------------------------------ */
+    /*                   external functions                   */
+    /* ------------------------------------------------------ */
 
     function getPlayerID(address _addr) external returns (uint256) {
         determinePID(_addr);
@@ -97,7 +111,7 @@ contract PlayerBook {
     function addGame(
         address _gameAddress,
         string calldata _gameNameStr
-    ) public onlyDevs {
+    ) external onlyDevs {
         require(
             gameIDs_[_gameAddress] == 0,
             "derp, that games already been registered"
@@ -152,6 +166,10 @@ contract PlayerBook {
         return (_isNewPlayer, _affID);
     }
 
+    /* ------------------------------------------------------ */
+    /*                    private functions                   */
+    /* ------------------------------------------------------ */
+
     function registerNameCore(
         uint256 _pID,
         address _addr,
@@ -196,5 +214,18 @@ contract PlayerBook {
             msg.value,
             block.timestamp
         );
+    }
+
+    function determinePID(address _addr) private returns (bool) {
+        if (playerIDxAddr_[_addr] == 0) {
+            pID_++;
+            playerIDxAddr_[_addr] = pID_;
+            player_[pID_].addr = _addr;
+
+            // set the new player bool to true
+            return (true);
+        } else {
+            return (false);
+        }
     }
 }

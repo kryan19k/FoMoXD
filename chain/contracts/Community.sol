@@ -4,33 +4,38 @@ pragma solidity ^0.8.17;
 import "./interface/ICommunity.sol";
 
 contract Community is ICommunity {
-    event Deposit(address indexed sender, uint256 amount);
-    event Submit(uint256 indexed txId);
-    event Approve(address indexed owner, uint256 indexed txId);
-    event Revoke(address indexed oener, uint256 indexed txId);
-    event Execute(uint256 indexed txId);
-
-    address[] public owners_;
-    mapping(address => bool) public isOwner;
-
+    /* ------------------------------------------------------ */
+    /*                      CONFIGURATION                     */
+    /* ------------------------------------------------------ */
     uint256 public requiredVoteNum_;
-
     struct Transaction {
         address to;
         uint256 value;
         bytes data;
         bool isExecuted;
     }
+    address[] public owners_;
     Transaction[] public transactions; // 存放所有交易
-
     // txId -> ownerAddr -> bool
     mapping(uint256 => mapping(address => bool)) public approved;
+    mapping(address => bool) public isOwner;
 
+    /* ------------------------------------------------------ */
+    /*                          EVENT                         */
+    /* ------------------------------------------------------ */
+
+    event Deposit(address indexed sender, uint256 amount);
+    event Submit(uint256 indexed txId);
+    event Approve(address indexed owner, uint256 indexed txId);
+    event Revoke(address indexed oener, uint256 indexed txId);
+    event Execute(uint256 indexed txId);
+    /* ------------------------------------------------------ */
+    /*                        MODIFIERS                       */
+    /* ------------------------------------------------------ */
     modifier onlyOwner() {
         require(isOwner[msg.sender], "not owner");
         _;
     }
-
     modifier txExists(uint256 _txId) {
         require(_txId < transactions.length, "tx does not exist");
         _;
@@ -44,6 +49,12 @@ contract Community is ICommunity {
         _;
     }
 
+    /* ------------------------------------------------------ */
+    /*                        FUNCTIONS                       */
+    /* ------------------------------------------------------ */
+    /* ------------------------------------------------------ */
+    /*                       constructor                      */
+    /* ------------------------------------------------------ */
     constructor(address[] memory _owners, uint256 _requiredVoteNum) {
         require(_owners.length > 0, "owners required");
         require(
@@ -60,12 +71,24 @@ contract Community is ICommunity {
         requiredVoteNum_ = _requiredVoteNum;
     }
 
+    /* ------------------------------------------------------ */
+    /*                    receive & fallback                    
+    /* ------------------------------------------------------ */
+
     receive() external payable {
         emit Deposit(msg.sender, msg.value);
     }
 
     function deposit() external payable override returns (bool) {
         emit Deposit(msg.sender, msg.value);
+    }
+
+    /* ------------------------------------------------------ */
+    /*                    external funcion                    */
+    /* ------------------------------------------------------ */
+
+    function isDev(address _who) external view returns (bool) {
+        return isOwner[_who];
     }
 
     function submit(
@@ -115,6 +138,10 @@ contract Community is ICommunity {
         emit Revoke(msg.sender, _txId);
     }
 
+    /* ------------------------------------------------------ */
+    /*                    private function                    */
+    /* ------------------------------------------------------ */
+
     function _getApprovalCount(
         uint256 _txId
     ) private view returns (uint256 count) {
@@ -123,9 +150,5 @@ contract Community is ICommunity {
                 count += 1;
             }
         }
-    }
-
-    function isDev(address _who) external view returns (bool) {
-        return isOwner[_who];
     }
 }

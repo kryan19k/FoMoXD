@@ -3,12 +3,12 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract FoMoERC721 is
     Initializable,
@@ -16,56 +16,6 @@ contract FoMoERC721 is
     OwnableUpgradeable,
     UUPSUpgradeable
 {
-    /* ------------------------------------------------------ */
-    /*                        CONTRACTS                       */
-    /* ------------------------------------------------------ */
-    address public FoMoXD_;
-    /* ------------------------------------------------------ */
-    /*                        LIBRARIES                       */
-    /* ------------------------------------------------------ */
-    using MerkleProof for bytes32[];
-    using StringsUpgradeable for uint256;
-    using Counters for Counters.Counter;
-    /* ------------------------------------------------------ */
-    /*                        MODIFIERS                       */
-    /* ------------------------------------------------------ */
-    modifier isOneTimeMintAmountValid(uint256 _mintAmount) {
-        require(_mintAmount > maxMintPerTx, "Over max one time mint amount");
-        _;
-    }
-    /**
-     * @notice Check how many NFTs are available to be minted
-     *  Set mint per user limit to 10 and owner limit to 20 - Week 8
-     */
-    modifier isMintAmountValid(uint256 _mintAmount) {
-        uint256 totalBalance = balance[msg.sender] += _mintAmount;
-        require(
-            totalBalance <=
-                (owner() == msg.sender ? ownerMaxBalance : userMaxBalance),
-            "Token quentity is out of range"
-        );
-        _;
-    }
-    /**
-     * @notice Check user has sufficient funds.
-     * Solidity witll change ether to wei, so we don't have to multiply 10**18 ourselves
-     */
-    modifier isValueValid(uint256 _mintAmount) {
-        require(msg.value >= price_ * _mintAmount, "Value is not enough");
-        _;
-    }
-    modifier onlyFoMoXD() {
-        require(
-            msg.sender == address(FoMoXD_) || msg.sender == owner(),
-            "only fomo pls..."
-        );
-        _;
-    }
-
-    modifier onlyOwner() {
-        require(owner() == msg.sender, "not owner");
-        _;
-    }
     /* ------------------------------------------------------ */
     /*                      CONFIGURABLES                     */
     /* ------------------------------------------------------ */
@@ -91,13 +41,59 @@ contract FoMoERC721 is
     mapping(address => uint256) public whiteListClaimed; // whitelist token amounts which already cliameded
     mapping(uint256 => string) private _tokenURIs; // TODO:
     mapping(address => uint256) public balance;
+    /* ------------------------------------------------------ */
+    /*                        LIBRARIES                       */
+    /* ------------------------------------------------------ */
+    using MerkleProof for bytes32[];
+    using StringsUpgradeable for uint256;
+    using Counters for Counters.Counter;
+    /* ------------------------------------------------------ */
+    /*                        CONTRACTS                       */
+    /* ------------------------------------------------------ */
+    address public FoMoXD_;
+    /* ------------------------------------------------------ */
+    /*                        MODIFIERS                       */
+    /* ------------------------------------------------------ */
+    modifier isOneTimeMintAmountValid(uint256 _mintAmount) {
+        require(_mintAmount > maxMintPerTx, "Over max one time mint amount");
+        _;
+    }
 
-    /**
-     * @notice This method is required to safeguard from unauthorized upgrades
-     * because in the UUPS pattern the upgrade is done from the implementation contract,
-     * whereas in the transparent proxy pattern, the upgrade is done via the proxy contract
-     */
-    function _authorizeUpgrade(address) internal override onlyOwner {}
+    modifier isMintAmountValid(uint256 _mintAmount) {
+        uint256 totalBalance = balance[msg.sender] += _mintAmount;
+        require(
+            totalBalance <=
+                (owner() == msg.sender ? ownerMaxBalance : userMaxBalance),
+            "Token quentity is out of range"
+        );
+        _;
+    }
+
+    modifier isValueValid(uint256 _mintAmount) {
+        require(msg.value >= price_ * _mintAmount, "Value is not enough");
+        _;
+    }
+
+    modifier onlyFoMoXD() {
+        require(
+            msg.sender == address(FoMoXD_) || msg.sender == owner(),
+            "only fomo pls..."
+        );
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(owner() == msg.sender, "not owner");
+        _;
+    }
+
+    /* ------------------------------------------------------ */
+    /*                        FUNCTIONS                       */
+    /* ------------------------------------------------------ */
+
+    /* ------------------------------------------------------ */
+    /*                       constructor                      */
+    /* ------------------------------------------------------ */
 
     /**
      * @notice Upgradable contracts should have an initialize method in place of constructors,
@@ -117,6 +113,95 @@ contract FoMoERC721 is
         userMaxBalance = 10;
         maxMintPerTx = 5;
         mysteryTokenURI_ = _mysteryTokenURI;
+    }
+
+    /* ------------------------------------------------------ */
+    /*                   EXTERNAL FUNCTIONS                   */
+    /* ------------------------------------------------------ */
+
+    function toggleRoundReveal(uint256 roundId) external onlyFoMoXD {
+        roundIsReveal_[roundId] = !roundIsReveal_[roundId];
+    }
+
+    function foMoXDMint(
+        address to,
+        uint256 _mintAmount
+    ) external payable onlyFoMoXD returns (uint256[] memory) {
+        uint256 _tokenId = nextTokenId_.current();
+        require(
+            _tokenId + _mintAmount < maxSupply_,
+            "Require amount is over total supply"
+        );
+        // @dev storage balance update must put before _safemint for prevent reentrantcy
+        balance[to] += _mintAmount;
+        uint256[] memory _tokenIds = new uint256[](_mintAmount);
+        for (uint256 i = 0; i < _mintAmount; i++) {
+            _safeMint(to, _tokenId);
+            _tokenIds[i] = _tokenId;
+            _tokenId++; // 一定不會超過 100，所以不會爆掉
+        }
+        nextTokenId_._value = _tokenId;
+        return _tokenIds;
+    }
+
+    function setOwnerMaxBalance(uint256 _maxBalance) external onlyOwner {
+        ownerMaxBalance = _maxBalance;
+    }
+
+    function setUserMaxBalance(uint256 _maxBalance) external onlyOwner {
+        userMaxBalance = _maxBalance;
+    }
+
+    function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
+        merkleRoot = _merkleRoot;
+    }
+
+    function withdrawBalance() external onlyOwner {
+        require(address(this).balance > 0, "Balance is 0");
+        (bool success, ) = payable(owner()).call{value: address(this).balance}(
+            ""
+        );
+        require(success, "Withdraw failed");
+    }
+
+    function setPrice(uint256 _price) external onlyOwner {
+        price_ = _price;
+    }
+
+    function setNftRoundBaseURI(
+        uint256 _roundId,
+        string calldata _newBaseURI
+    ) external onlyOwner {
+        roundBaseURI_[_roundId] = _newBaseURI;
+    }
+
+    function setRoundMysteryURI(
+        uint256 _roundId,
+        string calldata _newBaseURI
+    ) external onlyOwner {
+        roundMysteryTokenURI[_roundId] = _newBaseURI;
+    }
+
+    function setBaseURI(string calldata _newBaseURI) external onlyOwner {
+        baseURI_ = _newBaseURI;
+    }
+
+    function setMysteryTokenURI(
+        string calldata _newmysteryTokenURI
+    ) external onlyOwner {
+        mysteryTokenURI_ = _newmysteryTokenURI;
+    }
+
+    function toggleMintActive() external onlyOwner {
+        mintActive = !mintActive;
+    }
+
+    function toggleEarlyMint() external onlyOwner {
+        earlyMintActive = !earlyMintActive;
+    }
+
+    function setFoMoGame(address _FoMoXD) external onlyOwner {
+        FoMoXD_ = _FoMoXD;
     }
 
     /* ------------------------------------------------------ */
@@ -190,107 +275,16 @@ contract FoMoERC721 is
         _mintAndUpdateCounter(_mintAmount);
     }
 
-    function foMoXDMint(
-        address to,
-        uint256 _mintAmount
-    ) external payable onlyFoMoXD returns (uint256[] memory) {
-        uint256 _tokenId = nextTokenId_.current();
-        require(
-            _tokenId + _mintAmount < maxSupply_,
-            "Require amount is over total supply"
-        );
-        // @dev storage balance update must put before _safemint for prevent reentrantcy
-        balance[to] += _mintAmount;
-        uint256[] memory _tokenIds = new uint256[](_mintAmount);
-        for (uint256 i = 0; i < _mintAmount; i++) {
-            _safeMint(to, _tokenId);
-            _tokenIds[i] = _tokenId;
-            _tokenId++; // 一定不會超過 100，所以不會爆掉
-        }
-        nextTokenId_._value = _tokenId;
-        return _tokenIds;
-    }
-
-    /* ------------------------------------------------------ */
-    /*                   EXTERNAL FUNCTIONS                   */
-    /* ------------------------------------------------------ */
-    /*----------  ADMINISTRATOR ONLY FUNCTIONS  ----------*/
-    function setOwnerMaxBalance(uint256 _maxBalance) external onlyOwner {
-        ownerMaxBalance = _maxBalance;
-    }
-
-    function setUserMaxBalance(uint256 _maxBalance) external onlyOwner {
-        userMaxBalance = _maxBalance;
-    }
-
-    /**
-     *  @notice set new merkle root
-     */
-    function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
-        merkleRoot = _merkleRoot;
-    }
-
-    /**
-     * @notice withdraw funds from the contract
-     */
-    function withdrawBalance() external onlyOwner {
-        require(address(this).balance > 0, "Balance is 0");
-        (bool success, ) = payable(owner()).call{value: address(this).balance}(
-            ""
-        );
-        require(success, "Withdraw failed");
-    }
-
-    /**
-     * @notice set the mint price
-     */
-    function setPrice(uint256 _price) external onlyOwner {
-        price_ = _price;
-    }
-
-    function setNftRoundBaseURI(
-        uint256 _roundId,
-        string calldata _newBaseURI
-    ) external onlyOwner {
-        roundBaseURI_[_roundId] = _newBaseURI;
-    }
-
-    function setRoundMysteryURI(
-        uint256 _roundId,
-        string calldata _newBaseURI
-    ) external onlyOwner {
-        roundMysteryTokenURI[_roundId] = _newBaseURI;
-    }
-
-    function setBaseURI(string calldata _newBaseURI) external onlyOwner {
-        baseURI_ = _newBaseURI;
-    }
-
-    function setMysteryTokenURI(
-        string calldata _newmysteryTokenURI
-    ) external onlyOwner {
-        mysteryTokenURI_ = _newmysteryTokenURI;
-    }
-
-    function toggleMintActive() external onlyOwner {
-        mintActive = !mintActive;
-    }
-
-    function toggleRoundReveal(uint256 roundId) external onlyFoMoXD {
-        roundIsReveal_[roundId] = !roundIsReveal_[roundId];
-    }
-
-    function toggleEarlyMint() external onlyOwner {
-        earlyMintActive = !earlyMintActive;
-    }
-
-    function setFoMoGame(address _FoMoXD) external onlyOwner {
-        FoMoXD_ = _FoMoXD;
-    }
-
     /* ------------------------------------------------------ */
     /*                   INTERNAL FUNCTIONS                   */
     /* ------------------------------------------------------ */
+    /**
+     * @notice This method is required to safeguard from unauthorized upgrades
+     * because in the UUPS pattern the upgrade is done from the implementation contract,
+     * whereas in the transparent proxy pattern, the upgrade is done via the proxy contract
+     */
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
     function _mintAndUpdateCounter(uint256 _mintAmount) internal {
         uint256 tokenId = nextTokenId_.current();
         require(

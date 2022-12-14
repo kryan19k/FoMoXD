@@ -60,10 +60,8 @@ contract FoMoXD is FXDevents {
     /* --------------------- Player Data --------------------- */
     // (name => pID) returns player id by name
     mapping(bytes32 => uint256) public pIDxName_;
-
     // (addr => pID) returns player id by address
     mapping(address => uint256) public playerIDxAddr_;
-
     // (pID => name => bool) list of names a player owns.  (used so you can change your display name amongst any name you own)
     mapping(uint256 => mapping(bytes32 => bool)) public plyrNames_;
     // (pID => data) player data
@@ -82,7 +80,6 @@ contract FoMoXD is FXDevents {
     mapping(FXDdatasets.Teams => FXDdatasets.TeamFee) public fees_;
     // (team => fees) pot split distribution by team
     mapping(FXDdatasets.Teams => FXDdatasets.PotSplit) public potSplit_;
-
     /* ------------------------------------------------------ */
     /*                        MODIFIER                        */
     /* ------------------------------------------------------ */
@@ -100,7 +97,7 @@ contract FoMoXD is FXDevents {
         _;
     }
 
-    modifier isHuman() {
+    modifier onlyHuman() {
         address sender = msg.sender;
         uint256 size;
         assembly {
@@ -120,6 +117,9 @@ contract FoMoXD is FXDevents {
 
     /* ------------------------------------------------------ */
     /*                        FUNCTIONS
+    /* ------------------------------------------------------ */
+    /* ------------------------------------------------------ */
+    /*                       constructor                      */
     /* ------------------------------------------------------ */
     constructor(
         IPlayerBook _playerBook,
@@ -161,6 +161,9 @@ contract FoMoXD is FXDevents {
         potSplit_[FXDdatasets.Teams.KIWI] = FXDdatasets.PotSplit(30, 10);
     }
 
+    /* ------------------------------------------------------ */
+    /*                    receive & fallback                    
+    /* ------------------------------------------------------ */
     receive() external payable {
         buyXid(FXDdatasets.Teams.CHOCO, 0);
     }
@@ -170,16 +173,149 @@ contract FoMoXD is FXDevents {
     }
 
     /* ------------------------------------------------------ */
-    /*                   INTERNAL FUNCTIONS
+    /*                   external functions                   */
+    /* ------------------------------------------------------ */
+
+    function potSwap() external payable {
+        // setup local rID
+        uint256 _rID = roundID_ + 1;
+        roundData_[_rID].pot += msg.value;
+    }
+
+    function setOtherFomo(address _otherF3D) external onlyDevs {
+        // make sure that it HASNT yet been linked.
+        require(
+            address(OtherFXD_) == address(0),
+            "silly dev, you already did that"
+        );
+
+        // set up other fomo3d (fast or long) for pot swap
+        OtherFXD_ = IOtherFoMoXD(_otherF3D);
+    }
+
+    function activate() external onlyDevs {
+        // make sure that its been linked.
+        require(
+            address(OtherFXD_) != address(0),
+            "must link to other FoMo3D first"
+        );
+
+        // can only be ran once
+        require(activated_ == false, "fomo3d already activated");
+
+        // activate the contract
+        activated_ = true;
+
+        // lets start first round
+        roundID_ = 1;
+        roundData_[1].startTime = block.timestamp;
+        roundData_[1].endTime =
+            block.timestamp +
+            roundGapTime_ +
+            roundInitTime_;
+    }
+
+    /**
+     * @dev withdraws all of your earnings.
+     */
+    function withdraw() external isActivated onlyHuman {
+        // setup local rID
+        uint256 _rID = roundID_;
+
+        // grab time
+        uint256 _now = block.timestamp;
+
+        // fetch player ID
+        uint256 _pID = playerIDxAddr_[msg.sender];
+
+        // setup temp var for player eth
+        uint256 _eth;
+
+        // check to see if round has ended and no one has run round end yet
+        if (
+            _now > roundData_[_rID].endTime && roundData_[_rID].ended == false
+        ) {
+            // end the round (distributes pot)
+            roundData_[_rID].ended = true;
+            endRound();
+
+            // get their earnings
+            _eth = withdrawEarnings(_pID);
+            // gib moni
+            if (_eth > 0) payable(player_[_pID].addr).transfer(_eth);
+
+            // in any other situation
+        } else {
+            // get their earnings 計算所有應得 win + generalShare + aff
+            _eth = withdrawEarnings(_pID);
+            // gib moni
+            if (_eth > 0) payable(player_[_pID].addr).transfer(_eth);
+        }
+        emit onWithdraw(_pID, msg.sender, _eth);
+    }
+
+    function registerNameXID(
+        string calldata _nameString,
+        uint256 _affCode,
+        bool _all
+    ) external payable onlyHuman {
+        bytes32 _name = _nameString.nameFilter();
+        address _addr = msg.sender;
+        uint256 _paid = msg.value;
+        (bool _isNewPlayer, uint256 _affID) = PlayerBook_
+            .registerNameXIDFromDapp{value: _paid}(
+            _addr,
+            _name,
+            _affCode,
+            _all
+        );
+
+        uint256 _pID = playerIDxAddr_[_addr];
+
+        // fire event
+        emit onNewName(
+            _pID,
+            _addr,
+            _name,
+            _isNewPlayer,
+            _affID,
+            player_[_affID].addr,
+            player_[_affID].name,
+            _paid,
+            block.timestamp
+        );
+    }
+
+    function receivePlayerInfo(
+        uint256 _pID,
+        address _addr,
+        bytes32 _name,
+        uint256 _laff
+    ) external {
+        require(
+            msg.sender == address(PlayerBook_),
+            "your not playerNames contract... hmmm.."
+        );
+        if (playerIDxAddr_[_addr] != _pID) playerIDxAddr_[_addr] = _pID;
+        if (pIDxName_[_name] != _pID) pIDxName_[_name] = _pID;
+        if (player_[_pID].addr != _addr) player_[_pID].addr = _addr;
+        if (player_[_pID].name != _name) player_[_pID].name = _name;
+        if (player_[_pID].lastAffiliateId != _laff)
+            player_[_pID].lastAffiliateId = _laff;
+        if (plyrNames_[_pID][_name] == false) plyrNames_[_pID][_name] = true;
+    }
+
+    /* ------------------------------------------------------ */
+    /*                    public funcions              
     /* ------------------------------------------------------ */
     function buyPuffXAddr(
         FXDdatasets.Teams _team,
         address _affCode
     )
-        public
+        external
         payable
         isActivated
-        isHuman
+        onlyHuman
         isWithinLimits(msg.value)
         returns (uint256 _playerID)
     {
@@ -213,7 +349,7 @@ contract FoMoXD is FXDevents {
     function buyXname(
         FXDdatasets.Teams _team,
         bytes32 _affCode
-    ) public payable isActivated isHuman isWithinLimits(msg.value) {
+    ) external payable isActivated onlyHuman isWithinLimits(msg.value) {
         // set up our tx event data and determine if player is new or not
         determinePID();
 
@@ -250,7 +386,7 @@ contract FoMoXD is FXDevents {
         // 購買 Key
         FXDdatasets.Teams _team,
         uint256 _affCode
-    ) public payable isActivated isHuman isWithinLimits(msg.value) {
+    ) public payable isActivated onlyHuman isWithinLimits(msg.value) {
         // set up our tx event data and determine if player is new or not
         determinePID();
 
@@ -276,6 +412,200 @@ contract FoMoXD is FXDevents {
         _buyPuff(_pID, _team, _affCode);
     }
 
+    function getAirDropPercentByEth(uint _eth) public returns (uint256) {
+        if (_eth >= 10000000000000000000) {
+            return 75;
+        } else if (
+            _eth >= 1000000000000000000 && // 1 eth
+            _eth < 10000000000000000000 // 10 eth
+        ) {
+            return 50;
+        } else if (_eth >= 100000000000000000 && _eth < 1000000000000000000) {
+            return 25;
+        }
+    }
+
+    /* ------------------------------------------------------ */
+    /*   Public Query : (for UI & viewing things on etherscan)
+    /* ------------------------------------------------------ */
+
+    /**
+     * @dev returns time left.  dont spam this, you'll ddos yourself from your node
+     * provider
+     * -functionhash- 0xc7e284b8
+     * @return time left in seconds
+     */
+    function getTimeLeft() public view returns (uint256) {
+        uint256 _rID = roundID_;
+        uint256 _now = block.timestamp;
+
+        if (_now < roundData_[_rID].endTime) {
+            return roundData_[_rID].endTime - _now;
+        } else return (0);
+    }
+
+    /**
+     * @dev returns player earnings per vaults
+     * -functionhash- 0x63066434
+     * @return winnings vault
+     * @return general vault
+     * @return affiliate vault
+     */
+    function getPlayerVaults(
+        uint256 _pID
+    ) public view returns (uint256, uint256, uint256) {
+        // setup local rID
+        uint256 _rID = roundID_;
+
+        // if round has ended.  but round end has not been run (so contract has not distributed winnings)
+        if (
+            block.timestamp > roundData_[_rID].endTime &&
+            roundData_[_rID].ended == false
+        ) {
+            uint256 _roundMask;
+            uint256 _roundEth;
+            uint256 _roundKeys;
+            uint256 _roundPot;
+            // if (roundData_[_rID].eth == 0 // && roundData_[_rID].ico > 0) {
+            //     // create a temp round eth based on eth sent in during ICO phase
+            //     _roundEth = roundData_[_rID].ico;
+
+            //     // create a temp round keys based on keys bought during ICO phase
+            //     _roundKeys = (roundData_[_rID].ico).puffs();
+
+            //     // create a temp round mask based on eth and keys from ICO phase
+            //     _roundMask =
+            //         ((roundData_[_rID].icoGen).mul(1000000000000000000)) /
+            //         _roundKeys;
+
+            //     // create a temp rount pot based on pot, and dust from mask
+            //     _roundPot = (roundData_[_rID].pot).add(
+            //         (roundData_[_rID].icoGen).sub(
+            //             (_roundMask.mul(_roundKeys)) / (1000000000000000000)
+            //         )
+            //     );
+            // } else {
+            _roundEth = roundData_[_rID].eth;
+            _roundKeys = roundData_[_rID].puffs;
+            _roundMask = roundData_[_rID].mask;
+            _roundPot = roundData_[_rID].pot;
+            // }
+
+            uint256 _playerKeys;
+            // if (playerRoundsData_[_pID][player_[_pID].lrnd].ico == 0)
+            //     _playerKeys = playerRoundsData_[_pID][player_[_pID].lrnd].puffs;
+            // else _playerKeys = calcPlayerICOPhaseKeys(_pID, _rID);
+
+            // if player is winner
+
+            {
+                if (roundData_[_rID].winnerId == _pID) {
+                    return (
+                        (player_[_pID].winningVault) +
+                            ((_roundPot * (48)) / 100),
+                        (player_[_pID].generalVault) +
+                            (
+                                getPlayerVaultsHelper(
+                                    _pID,
+                                    _roundMask,
+                                    _roundPot,
+                                    _roundKeys,
+                                    _playerKeys
+                                )
+                            ),
+                        player_[_pID].lastAffiliateId
+                    );
+                    // if player is not the winner
+                } else {
+                    return (
+                        player_[_pID].winningVault,
+                        (player_[_pID].generalVault) +
+                            (
+                                getPlayerVaultsHelper(
+                                    _pID,
+                                    _roundMask,
+                                    _roundPot,
+                                    _roundKeys,
+                                    _playerKeys
+                                )
+                            ),
+                        player_[_pID].lastAffiliateId
+                    );
+                }
+            }
+
+            // if round is still going on, we are in ico phase, or round has ended and round end has been ran
+        } else {
+            return (
+                player_[_pID].winningVault,
+                (player_[_pID].generalVault) +
+                    (calcUnMaskedEarnings(_pID, player_[_pID].lastRound)),
+                player_[_pID].lastAffiliateId
+            );
+        }
+    }
+
+    /* ------------------------------------------------------ */
+    /*                        CAUCULATE                       */
+    /* ------------------------------------------------------ */
+    /**
+     * @dev returns the amount of keys you would get given an amount of eth.
+     * - during live round.  this is accurate. (well... unless someone buys before
+     * you do and ups the price!  you better HURRY!)
+     * - during ICO phase.  this is the max you would get based on current eth
+     * invested during ICO phase.  if others invest after you, you will receive
+     * less.  (so distract them with meme vids till ICO is over)
+     * -functionhash- 0xce89c80c
+     * @param _rID round ID you want price for
+     * @param _eth amount of eth sent in
+     * @return keys received
+     */
+    function calcKeysReceived(
+        uint256 _rID,
+        uint256 _eth
+    ) public view returns (uint256) {
+        // grab time
+        uint256 _now = block.timestamp;
+
+        // is ICO phase over??  & theres eth in the round?
+        if (
+            _now > roundData_[_rID].startTime + roundGapTime_ &&
+            roundData_[_rID].eth != 0 &&
+            _now <= roundData_[_rID].endTime
+        ) return ((roundData_[_rID].eth).puffsReceive(_eth));
+        else if (_now <= roundData_[_rID].endTime)
+            // round hasn't ended (in ICO phase, or ICO phase is over, but round eth is 0)
+            return ((roundData_[_rID].ico).puffsReceive(_eth));
+        // rounds over.  need keys for new round
+        else return ((_eth).puffs());
+    }
+
+    function iWantXPuffs(uint256 _puffs) public view returns (uint256) {
+        // setup local rID
+        uint256 _rID = roundID_;
+
+        // grab time
+        uint256 _now = block.timestamp;
+
+        // is ICO phase over??  & theres eth in the round?
+        if (
+            _now > roundData_[_rID].startTime + roundGapTime_ &&
+            roundData_[_rID].eth != 0 &&
+            _now <= roundData_[_rID].endTime
+        ) return ((roundData_[_rID].puffs + (_puffs)).ethReceive(_puffs));
+        // else if (_now <= roundData_[_rID].endTime)
+        //     // round hasn't ended (in ICO phase, or ICO phase is over, but round eth is 0)
+        //     return (
+        //         (((roundData_[_rID].ico).puffs()) + (_puffs)).ethReceive(_puffs)
+        //     );
+        // rounds over.  need price for new round
+        else return ((_puffs).eth());
+    }
+
+    /* ------------------------------------------------------ */
+    /*                   internal functions
+    /* ------------------------------------------------------ */
+
     function _buyPuff(
         uint256 _playerID,
         FXDdatasets.Teams _team,
@@ -299,6 +629,35 @@ contract FoMoXD is FXDevents {
             // refund
             player_[_playerID].generalVault += msg.value;
         }
+    }
+
+    /* ------------------------------------------------------ */
+    /*                    private functions                   */
+    /* ------------------------------------------------------ */
+
+    function verifyTeam(
+        FXDdatasets.Teams _team
+    ) private pure returns (FXDdatasets.Teams) {
+        if (uint8(_team) < 0 || uint8(_team) > 3)
+            return (FXDdatasets.Teams.BANA);
+        else return (_team);
+    }
+
+    /**
+     * solidity hates stack limits.  this lets us avoid that hate
+     */
+    function getPlayerVaultsHelper(
+        uint256 _pID,
+        uint256 _roundMask,
+        uint256 _roundPot,
+        uint256 _roundKeys,
+        uint256 _playerKeys
+    ) private view returns (uint256) {
+        return ((((_roundMask +
+            ((((_roundPot *
+                (potSplit_[roundData_[roundID_].winnerTeamId].generalShare)) /
+                100) * (1000000000000000000)) / _roundKeys)) * (_playerKeys)) /
+            1000000000000000000) - (playerRoundsData_[_pID][roundID_].mask));
     }
 
     function _buyPuffCore(
@@ -600,25 +959,6 @@ contract FoMoXD is FXDevents {
         return (_generalShare, _airShare, _potShare);
     }
 
-    function getAirDropPercentByEth(uint _eth) public returns (uint256) {
-        if (_eth >= 10000000000000000000) {
-            return 75;
-        } else if (
-            _eth >= 1000000000000000000 && // 1 eth
-            _eth < 10000000000000000000 // 10 eth
-        ) {
-            return 50;
-        } else if (_eth >= 100000000000000000 && _eth < 1000000000000000000) {
-            return 25;
-        }
-    }
-
-    function potSwap() external payable {
-        // setup local rID
-        uint256 _rID = roundID_ + 1;
-        roundData_[_rID].pot += msg.value;
-    }
-
     /**
      * @dev updates masks for round and player when puffs are bought
      * @return dust left over
@@ -633,10 +973,8 @@ contract FoMoXD is FXDevents {
         uint256 _expotions = 1000000000000000000;
         // calc profit per key & round mask based on this buy:  (dust goes to pot)
         uint256 _profitPerPuff = (_gen * _expotions) / roundData_[_rID].puffs;
-        // console.log("_profitPerPuff-->", _profitPerPuff);
 
         roundData_[_rID].mask += _profitPerPuff;
-        // console.log("roundData_[_rID].mask????", roundData_[_rID].mask);
 
         // calculate player earning from their own buy (only based on the puffs
         // they just bought).  & update player earnings mask
@@ -675,79 +1013,6 @@ contract FoMoXD is FXDevents {
 
             // if (_laff != 0 && _laff != _pID) player_[_pID].laff = _laff;
         }
-    }
-
-    function setOtherFomo(address _otherF3D) public onlyDevs {
-        // make sure that it HASNT yet been linked.
-        require(
-            address(OtherFXD_) == address(0),
-            "silly dev, you already did that"
-        );
-
-        // set up other fomo3d (fast or long) for pot swap
-        OtherFXD_ = IOtherFoMoXD(_otherF3D);
-    }
-
-    function activate() public onlyDevs {
-        // make sure that its been linked.
-        require(
-            address(OtherFXD_) != address(0),
-            "must link to other FoMo3D first"
-        );
-
-        // can only be ran once
-        require(activated_ == false, "fomo3d already activated");
-
-        // activate the contract
-        activated_ = true;
-
-        // lets start first round
-        roundID_ = 1;
-        roundData_[1].startTime = block.timestamp;
-        roundData_[1].endTime =
-            block.timestamp +
-            roundGapTime_ +
-            roundInitTime_;
-    }
-
-    /**
-     * @dev withdraws all of your earnings.
-     * -functionhash- 0x3ccfd60b
-     */
-    function withdraw() public isActivated isHuman {
-        // setup local rID
-        uint256 _rID = roundID_;
-
-        // grab time
-        uint256 _now = block.timestamp;
-
-        // fetch player ID
-        uint256 _pID = playerIDxAddr_[msg.sender];
-
-        // setup temp var for player eth
-        uint256 _eth;
-
-        // check to see if round has ended and no one has run round end yet
-        if (
-            _now > roundData_[_rID].endTime && roundData_[_rID].ended == false
-        ) {
-            // end the round (distributes pot)
-            roundData_[_rID].ended = true;
-            endRound();
-
-            // get their earnings
-            _eth = withdrawEarnings(_pID);
-            // gib moni
-            if (_eth > 0) payable(player_[_pID].addr).transfer(_eth);
-
-            // in any other situation
-        } else {
-            // get their earnings 計算所有應得 win + generalShare + aff
-            _eth = withdrawEarnings(_pID);
-            // gib moni
-            if (_eth > 0) payable(player_[_pID].addr).transfer(_eth);
-        }
-        emit onWithdraw(_pID, msg.sender, _eth);
     }
 
     /**
@@ -795,269 +1060,5 @@ contract FoMoXD is FXDevents {
         return ((((roundData_[_rIDlast].mask) *
             (playerRoundsData_[_pID][_rIDlast].puffs)) / 1000000000000000000) -
             playerRoundsData_[_pID][_rIDlast].mask);
-    }
-
-    /* ------------------------------------------------------ */
-    /*   Public Query : (for UI & viewing things on etherscan)
-    /* ------------------------------------------------------ */
-
-    /**
-     * @dev returns time left.  dont spam this, you'll ddos yourself from your node
-     * provider
-     * -functionhash- 0xc7e284b8
-     * @return time left in seconds
-     */
-    function getTimeLeft() public view returns (uint256) {
-        uint256 _rID = roundID_;
-        uint256 _now = block.timestamp;
-
-        if (_now < roundData_[_rID].endTime) {
-            return roundData_[_rID].endTime - _now;
-        } else return (0);
-    }
-
-    /**
-     * @dev returns player earnings per vaults
-     * -functionhash- 0x63066434
-     * @return winnings vault
-     * @return general vault
-     * @return affiliate vault
-     */
-    function getPlayerVaults(
-        uint256 _pID
-    ) public view returns (uint256, uint256, uint256) {
-        // setup local rID
-        uint256 _rID = roundID_;
-
-        // if round has ended.  but round end has not been run (so contract has not distributed winnings)
-        if (
-            block.timestamp > roundData_[_rID].endTime &&
-            roundData_[_rID].ended == false
-        ) {
-            uint256 _roundMask;
-            uint256 _roundEth;
-            uint256 _roundKeys;
-            uint256 _roundPot;
-            // if (roundData_[_rID].eth == 0 // && roundData_[_rID].ico > 0) {
-            //     // create a temp round eth based on eth sent in during ICO phase
-            //     _roundEth = roundData_[_rID].ico;
-
-            //     // create a temp round keys based on keys bought during ICO phase
-            //     _roundKeys = (roundData_[_rID].ico).puffs();
-
-            //     // create a temp round mask based on eth and keys from ICO phase
-            //     _roundMask =
-            //         ((roundData_[_rID].icoGen).mul(1000000000000000000)) /
-            //         _roundKeys;
-
-            //     // create a temp rount pot based on pot, and dust from mask
-            //     _roundPot = (roundData_[_rID].pot).add(
-            //         (roundData_[_rID].icoGen).sub(
-            //             (_roundMask.mul(_roundKeys)) / (1000000000000000000)
-            //         )
-            //     );
-            // } else {
-            _roundEth = roundData_[_rID].eth;
-            _roundKeys = roundData_[_rID].puffs;
-            _roundMask = roundData_[_rID].mask;
-            _roundPot = roundData_[_rID].pot;
-            // }
-
-            uint256 _playerKeys;
-            // if (playerRoundsData_[_pID][player_[_pID].lrnd].ico == 0)
-            //     _playerKeys = playerRoundsData_[_pID][player_[_pID].lrnd].puffs;
-            // else _playerKeys = calcPlayerICOPhaseKeys(_pID, _rID);
-
-            // if player is winner
-
-            {
-                if (roundData_[_rID].winnerId == _pID) {
-                    return (
-                        (player_[_pID].winningVault) +
-                            ((_roundPot * (48)) / 100),
-                        (player_[_pID].generalVault) +
-                            (
-                                getPlayerVaultsHelper(
-                                    _pID,
-                                    _roundMask,
-                                    _roundPot,
-                                    _roundKeys,
-                                    _playerKeys
-                                )
-                            ),
-                        player_[_pID].lastAffiliateId
-                    );
-                    // if player is not the winner
-                } else {
-                    return (
-                        player_[_pID].winningVault,
-                        (player_[_pID].generalVault) +
-                            (
-                                getPlayerVaultsHelper(
-                                    _pID,
-                                    _roundMask,
-                                    _roundPot,
-                                    _roundKeys,
-                                    _playerKeys
-                                )
-                            ),
-                        player_[_pID].lastAffiliateId
-                    );
-                }
-            }
-
-            // if round is still going on, we are in ico phase, or round has ended and round end has been ran
-        } else {
-            return (
-                player_[_pID].winningVault,
-                (player_[_pID].generalVault) +
-                    (calcUnMaskedEarnings(_pID, player_[_pID].lastRound)),
-                player_[_pID].lastAffiliateId
-            );
-        }
-    }
-
-    /**
-     * solidity hates stack limits.  this lets us avoid that hate
-     */
-    function getPlayerVaultsHelper(
-        uint256 _pID,
-        uint256 _roundMask,
-        uint256 _roundPot,
-        uint256 _roundKeys,
-        uint256 _playerKeys
-    ) private view returns (uint256) {
-        return ((((_roundMask +
-            ((((_roundPot *
-                (potSplit_[roundData_[roundID_].winnerTeamId].generalShare)) /
-                100) * (1000000000000000000)) / _roundKeys)) * (_playerKeys)) /
-            1000000000000000000) - (playerRoundsData_[_pID][roundID_].mask));
-    }
-
-    /* ------------------------------------------------------ */
-    /*                        CAUCULATE                       */
-    /* ------------------------------------------------------ */
-    /**
-     * @dev returns the amount of keys you would get given an amount of eth.
-     * - during live round.  this is accurate. (well... unless someone buys before
-     * you do and ups the price!  you better HURRY!)
-     * - during ICO phase.  this is the max you would get based on current eth
-     * invested during ICO phase.  if others invest after you, you will receive
-     * less.  (so distract them with meme vids till ICO is over)
-     * -functionhash- 0xce89c80c
-     * @param _rID round ID you want price for
-     * @param _eth amount of eth sent in
-     * @return keys received
-     */
-    function calcKeysReceived(
-        uint256 _rID,
-        uint256 _eth
-    ) public view returns (uint256) {
-        // grab time
-        uint256 _now = block.timestamp;
-
-        // is ICO phase over??  & theres eth in the round?
-        if (
-            _now > roundData_[_rID].startTime + roundGapTime_ &&
-            roundData_[_rID].eth != 0 &&
-            _now <= roundData_[_rID].endTime
-        ) return ((roundData_[_rID].eth).puffsReceive(_eth));
-        else if (_now <= roundData_[_rID].endTime)
-            // round hasn't ended (in ICO phase, or ICO phase is over, but round eth is 0)
-            return ((roundData_[_rID].ico).puffsReceive(_eth));
-        // rounds over.  need keys for new round
-        else return ((_eth).puffs());
-    }
-
-    /**
-     * @dev returns current eth price for X keys.
-     * - during live round.  this is accurate. (well... unless someone buys before
-     * you do and ups the price!  you better HURRY!)
-     * - during ICO phase.  this is the max you would get based on current eth
-     * invested during ICO phase.  if others invest after you, you will receive
-     * less.  (so distract them with meme vids till ICO is over)
-     * -functionhash- 0xcf808000
-     * @param _puffs number of keys desired (in 18 decimal format)
-     * @return amount of eth needed to send
-     */
-    function iWantXPuffs(uint256 _puffs) public view returns (uint256) {
-        // setup local rID
-        uint256 _rID = roundID_;
-
-        // grab time
-        uint256 _now = block.timestamp;
-
-        // is ICO phase over??  & theres eth in the round?
-        if (
-            _now > roundData_[_rID].startTime + roundGapTime_ &&
-            roundData_[_rID].eth != 0 &&
-            _now <= roundData_[_rID].endTime
-        ) return ((roundData_[_rID].puffs + (_puffs)).ethReceive(_puffs));
-        // else if (_now <= roundData_[_rID].endTime)
-        //     // round hasn't ended (in ICO phase, or ICO phase is over, but round eth is 0)
-        //     return (
-        //         (((roundData_[_rID].ico).puffs()) + (_puffs)).ethReceive(_puffs)
-        //     );
-        // rounds over.  need price for new round
-        else return ((_puffs).eth());
-    }
-
-    function verifyTeam(
-        FXDdatasets.Teams _team
-    ) private pure returns (FXDdatasets.Teams) {
-        if (uint8(_team) < 0 || uint8(_team) > 3)
-            return (FXDdatasets.Teams.BANA);
-        else return (_team);
-    }
-
-    function registerNameXID(
-        string calldata _nameString,
-        uint256 _affCode,
-        bool _all
-    ) public payable isHuman {
-        bytes32 _name = _nameString.nameFilter();
-        address _addr = msg.sender;
-        uint256 _paid = msg.value;
-        (bool _isNewPlayer, uint256 _affID) = PlayerBook_
-            .registerNameXIDFromDapp{value: _paid}(
-            _addr,
-            _name,
-            _affCode,
-            _all
-        );
-
-        uint256 _pID = playerIDxAddr_[_addr];
-
-        // fire event
-        emit onNewName(
-            _pID,
-            _addr,
-            _name,
-            _isNewPlayer,
-            _affID,
-            player_[_affID].addr,
-            player_[_affID].name,
-            _paid,
-            block.timestamp
-        );
-    }
-
-    function receivePlayerInfo(
-        uint256 _pID,
-        address _addr,
-        bytes32 _name,
-        uint256 _laff
-    ) external {
-        require(
-            msg.sender == address(PlayerBook_),
-            "your not playerNames contract... hmmm.."
-        );
-        if (playerIDxAddr_[_addr] != _pID) playerIDxAddr_[_addr] = _pID;
-        if (pIDxName_[_name] != _pID) pIDxName_[_name] = _pID;
-        if (player_[_pID].addr != _addr) player_[_pID].addr = _addr;
-        if (player_[_pID].name != _name) player_[_pID].name = _name;
-        if (player_[_pID].lastAffiliateId != _laff)
-            player_[_pID].lastAffiliateId = _laff;
-        if (plyrNames_[_pID][_name] == false) plyrNames_[_pID][_name] = true;
     }
 }

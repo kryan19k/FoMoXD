@@ -5,7 +5,8 @@ import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
 import "./interface/INumOracle.sol";
-import "hardhat/console.sol";
+
+// import "hardhat/console.sol";
 
 /**
  * Request testnet LINK and ETH here: https://faucets.chain.link/
@@ -19,36 +20,20 @@ import "hardhat/console.sol";
  */
 
 contract SimpleNumOracle is INumOracle, VRFConsumerBaseV2, ConfirmedOwner {
+    /* ------------------------------------------------------ */
+    /*                        CONTRACT
+    /* ------------------------------------------------------ */
     address public FoMoXD_;
-    uint256 requestId_; // mock chain link request id
-    uint256 public airDropTracker_ = 0; // incremented each time a "qualified" tx occurs.  used to determine winning air drop
-    uint256 public airERC721Tracker_ = 0;
-
-    event RequestSent(uint256 requestId, uint32 numWords);
-    event RequestFulfilled(uint256 requestId, uint256[] randomWords);
-
-    struct RequestStatus {
-        bool fulfilled; // whether the request has been successfully fulfilled
-        bool exists; // whether a requestId exists
-        uint256[] randomWords;
-    }
-    mapping(uint256 => RequestStatus)
-        public s_requests; /* requestId --> requestStatus */
-    VRFCoordinatorV2Interface COORDINATOR;
-
+    /* ------------------------------------------------------ */
+    /*                      CONFIGURATION                     */
+    /* ------------------------------------------------------ */
     // Your subscription ID.
     uint64 s_subscriptionId;
-
-    // past requests Id.
-    uint256[] public requestIds;
-    uint256 public lastRequestId;
-
     // The gas lane to use, which specifies the maximum gas price to bump to.
     // For a list of available gas lanes on each network,
     // see https://docs.chain.link/docs/vrf/v2/subscription/supported-networks/#configurations
     bytes32 keyHash =
         0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
-
     // Depends on the number of requested values that you want sent to the
     // fulfillRandomWords() function. Storing each word costs about 20,000 gas,
     // so 100,000 is a safe default for this example contract. Test and adjust
@@ -63,12 +48,43 @@ contract SimpleNumOracle is INumOracle, VRFConsumerBaseV2, ConfirmedOwner {
     // For this example, retrieve 2 random values in one request.
     // Cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS.
     uint32 numWords = 2;
+    /* ------------------------------------------------------ */
+    /*                         STORAGE                        */
+    /* ------------------------------------------------------ */
+    uint256 requestId_; // mock chain link request id
+    uint256 public airDropTracker_ = 0; // incremented each time a "qualified" tx occurs.  used to determine winning air drop
+    uint256 public airERC721Tracker_ = 0;
+    struct RequestStatus {
+        bool fulfilled; // whether the request has been successfully fulfilled
+        bool exists; // whether a requestId exists
+        uint256[] randomWords;
+    }
+    mapping(uint256 => RequestStatus)
+        public s_requests; /* requestId --> requestStatus */
+    VRFCoordinatorV2Interface COORDINATOR;
 
+    // past requests Id.
+    uint256[] public requestIds;
+    uint256 public lastRequestId;
+    /* ------------------------------------------------------ */
+    /*                         Events                         */
+    /* ------------------------------------------------------ */
+    event RequestSent(uint256 requestId, uint32 numWords);
+    event RequestFulfilled(uint256 requestId, uint256[] randomWords);
+    /* ------------------------------------------------------ */
+    /*                        Modifier                        */
+    /* ------------------------------------------------------ */
     modifier onlyFoMoXD() {
         require(msg.sender == address(FoMoXD_), "only team just can activate");
         _;
     }
 
+    /* ------------------------------------------------------ */
+    /*                        FUNCTIONS
+    /* ------------------------------------------------------ */
+    /* ------------------------------------------------------ */
+    /*                       constructor                      */
+    /* ------------------------------------------------------ */
     /**
      * HARDCODED FOR GOERLI
      * COORDINATOR: 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D
@@ -85,9 +101,63 @@ contract SimpleNumOracle is INumOracle, VRFConsumerBaseV2, ConfirmedOwner {
         s_subscriptionId = subscriptionId;
     }
 
+    /* ------------------------------------------------------ */
+    /*                   external functions                   */
+    /* ------------------------------------------------------ */
+
     function setFoMoGame(address _FoMoXD) external onlyOwner {
         FoMoXD_ = _FoMoXD;
     }
+
+    function getRequestStatus(
+        uint256 _requestId
+    ) external view returns (bool fulfilled, uint256[] memory randomWords) {
+        require(s_requests[_requestId].exists, "request not found");
+        RequestStatus memory request = s_requests[_requestId];
+        return (request.fulfilled, request.randomWords);
+    }
+
+    function isAirdrop() external override onlyFoMoXD returns (bool) {
+        uint256 requestId = requestRandomWords();
+        uint256[] memory _randomWords = s_requests[requestId].randomWords;
+        uint256 seed;
+        for (uint256 i; i < _randomWords.length; i++) {
+            seed += _randomWords[i];
+        }
+        // TODO: for testing
+        if (seed % 2 == 0) {
+            // if ((seed - ((seed / 1000) * 1000)) < airDropTracker_) {
+            // reset air drop tracker
+            airDropTracker_ = 0;
+            return (true);
+        } else {
+            airDropTracker_++; // 第幾輪都沒有人中
+            return (false);
+        }
+    }
+
+    function isAirdropNfts() external override onlyFoMoXD returns (bool) {
+        uint256 requestId = requestRandomWords();
+        uint256[] memory _randomWords = s_requests[requestId].randomWords;
+        uint256 seed;
+        for (uint256 i; i < _randomWords.length; i++) {
+            seed += _randomWords[i];
+        }
+        // TODO: for testing
+        if (seed % 2 == 0) {
+            // if ((seed - ((seed / 1000) * 1000)) < airDropTracker_) {
+            // reset air drop tracker
+            airDropTracker_ = 0;
+            return (true);
+        } else {
+            airDropTracker_++; // 第幾輪都沒有人中
+            return (false);
+        }
+    }
+
+    /* ------------------------------------------------------ */
+    /*                   public functions                   
+    /* ------------------------------------------------------ */
 
     // Assumes the subscription is funded sufficiently.
     function requestRandomWords() public returns (uint256) {
@@ -117,6 +187,10 @@ contract SimpleNumOracle is INumOracle, VRFConsumerBaseV2, ConfirmedOwner {
         return _requestId;
     }
 
+    /* ------------------------------------------------------ */
+    /*                   internal functions                   */
+    /* ------------------------------------------------------ */
+
     function fulfillRandomWords(
         uint256 _requestId,
         uint256[] memory _randomWords
@@ -125,14 +199,6 @@ contract SimpleNumOracle is INumOracle, VRFConsumerBaseV2, ConfirmedOwner {
         s_requests[_requestId].fulfilled = true;
         s_requests[_requestId].randomWords = _randomWords;
         emit RequestFulfilled(_requestId, _randomWords);
-    }
-
-    function getRequestStatus(
-        uint256 _requestId
-    ) external view returns (bool fulfilled, uint256[] memory randomWords) {
-        require(s_requests[_requestId].exists, "request not found");
-        RequestStatus memory request = s_requests[_requestId];
-        return (request.fulfilled, request.randomWords);
     }
 
     function chainlinkCallbackMock(
@@ -167,48 +233,5 @@ contract SimpleNumOracle is INumOracle, VRFConsumerBaseV2, ConfirmedOwner {
             numWordsWaitGenerate++;
         }
         return result;
-    }
-
-    /**
-     * @dev generates a random number between 0-99 and checks to see if thats
-     * resulted in an airdrop win
-     * @return do we have a winner?
-     */
-    function isAirdrop() external override onlyFoMoXD returns (bool) {
-        uint256 requestId = requestRandomWords();
-        uint256[] memory _randomWords = s_requests[requestId].randomWords;
-        uint256 seed;
-        for (uint256 i; i < _randomWords.length; i++) {
-            seed += _randomWords[i];
-        }
-        // TODO: for testing
-        if (seed / 2 == 0) {
-            // if ((seed - ((seed / 1000) * 1000)) < airDropTracker_) {
-            // reset air drop tracker
-            airDropTracker_ = 0;
-            return (true);
-        } else {
-            airDropTracker_++; // 第幾輪都沒有人中
-            return (false);
-        }
-    }
-
-    function isAirdropNfts() external override onlyFoMoXD returns (bool) {
-        uint256 requestId = requestRandomWords();
-        uint256[] memory _randomWords = s_requests[requestId].randomWords;
-        uint256 seed;
-        for (uint256 i; i < _randomWords.length; i++) {
-            seed += _randomWords[i];
-        }
-        // TODO: for testing
-        if (seed / 2 == 0) {
-            // if ((seed - ((seed / 1000) * 1000)) < airDropTracker_) {
-            // reset air drop tracker
-            airDropTracker_ = 0;
-            return (true);
-        } else {
-            airDropTracker_++; // 第幾輪都沒有人中
-            return (false);
-        }
     }
 }

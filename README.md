@@ -6,6 +6,7 @@
 ## Feature
 - Integrated Profit-sharing token, NFTs, DAO, Multi-sig wallet
 - Utilizes the hardhat framework for development and testing
+- As supply for Pufss increases, the price will rise
 
 ## Steps for E2E test
 
@@ -55,19 +56,21 @@ npm run test
 stateDiagram
     direction LR
     [*] --> Player: Purchase puffs 🧁
-    note right of Player
-       As supply for Pufss increases, the price will rise ⤴️
-    end note
     state Player {
       direction LR
       player --> nftWinner: Airdrop NFT 🖼️
       player --> ethWinner: Airdrop ETH 🪙
       player --> Affiliate: Get affiliate ETH 👥
     }
-    Player --> NoTime⏰ 
-    NoTime⏰  --> GameOver🤡 : got nothing but puffs 🧁
-    NoTime⏰  --> finalPotWinner🤑: final one bought puff 💰
-    NoTime⏰  --> nftWinner👨🏻‍🎨: reveal mystery NFTS 🖼️
+    Player --> NoTime
+    Player --> AddTime
+    state NoTime{
+      NoTime⏰  --> GameOver🤡: Nothing but puffs 🧁
+      NoTime⏰  --> PickWinner: Final pot winner 💰
+      NoTime⏰  --> NFTWinner👨🏻‍🎨: Reveal mystery NFTS 🖼️
+    }
+    AddTime
+    NoTime --> [*]
 ```
 
 
@@ -134,7 +137,9 @@ flowchart LR
 - Community
 
 
-# Assets Credits
+# Credits
+- [Style Guide](https://docs.soliditylang.org/en/v0.8.17/common-patterns.html)
+
 ### NFT Images
 - <https://giventofly.github.io/pixelit/>
 - [JillyPuff](https://twitter.com/scrixels/status/1136653042642817024)
