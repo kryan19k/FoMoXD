@@ -201,7 +201,6 @@ contract PlayerBook {
         // push player info to games
         if (_all == true) {
             for (uint256 i = 1; i <= gID_; i++) {
-                console.log("Gmea~~~", i);
                 games_[i].receivePlayerInfo(_pID, _addr, _name, _affID);
             }
         }

@@ -25,7 +25,9 @@ const Tabs = (props: any) => {
     wantXPuffs,
     puffsToETH,
     setPuffsToETH,
-    withdraw
+    withdraw,
+    buyName,
+    params
   } = props;
   if (!fomoXdContract) {
     Toast.fire({
@@ -55,13 +57,16 @@ const Tabs = (props: any) => {
       <div className="tabs-container">
         <div className="tabs">
           <button className={`tab ${checkActive(1, 'active')}`} onClick={() => handleTabClick(1)}>
-            Purchase
+            Puff
           </button>
           <button className={`tab ${checkActive(2, 'active')}`} onClick={() => handleTabClick(2)}>
             Vault
           </button>
           <button className={`tab ${checkActive(3, 'active')}`} onClick={() => handleTabClick(3)}>
             Round
+          </button>
+          <button className={`tab ${checkActive(4, 'active')}`} onClick={() => handleTabClick(4)}>
+            Referrals
           </button>
         </div>
         <div className="panels">
@@ -181,9 +186,9 @@ const Tabs = (props: any) => {
                 )}
                 type="string"
               />
-              <div className="withdraw-botton-wrapper">
+              <div className="tab-button-wrapper">
                 <button
-                  className="withdraw-botton btn"
+                  className="tab-button btn"
                   onClick={async () => {
                     await withdraw();
                   }}>
@@ -224,6 +229,40 @@ const Tabs = (props: any) => {
                 value={Web3.utils.fromWei(playerData.mask.toString(), 'ether')}
                 type="string"
               />
+            </div>
+          </div>
+          <div className={`panel ${checkActive(4, 'active')}`}>
+            <div className="from-inputs">
+              {playerData?.playerNames?.length === 0
+                ? ''
+                : playerData?.playerNames?.map((name: string) => {
+                    return (
+                      <div className="from-input">
+                        <label htmlFor={name}>{name}</label>
+                      </div>
+                    );
+                  })}
+              <button
+                className="tab-button btn"
+                onClick={async () => {
+                  console.log('params???', params);
+                  const { value: name } = await Swal.fire({
+                    title: 'Enter your referel name',
+                    input: 'text',
+                    inputLabel: 'Please type in low letter',
+                    inputValue: '',
+                    showCancelButton: true,
+                    inputValidator: async (value: string) => {
+                      if (!value) {
+                        return 'You need to write something!';
+                      } else {
+                        return await buyName(value, params);
+                      }
+                    }
+                  });
+                }}>
+                Buy referel name
+              </button>
             </div>
           </div>
         </div>

@@ -196,17 +196,19 @@ input:disabled {
 }
 
 /* ---------------------- Withdraw ---------------------- */
-.withdraw-botton-wrapper {
+.tab-button-wrapper {
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
 }
-.withdraw-botton {
+
+.tab-button {
+  padding: 0 20px;
   color: #ffc107;
   border-color: #ffc107;
   height: 45px;
-  width: 120px;
+  min-width: 120px;
   border-radius: 5px;
   border-radius: 2rem;
   letter-spacing: 1.5px;

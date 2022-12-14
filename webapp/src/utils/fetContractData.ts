@@ -126,6 +126,39 @@ export default class GameHelper {
     }
   }
 
+  async buyName(name: string, aff?: { address?: string; name?: string; id?: number }) {
+    const affcode = aff?.id || 0;
+    await this.fomoXdContract.methods
+      ?.registerNameXID(name, affcode, true)
+      .send({ from: this.account, value: this.web3.utils.toWei('1', 'gwei') })
+      .then((receipt: any) => {
+        console.log(receipt);
+        Swal.fire({
+          title: `You have new name!`,
+          confirmButtonText: 'OK',
+          padding: '3em',
+          color: '#716add',
+          text: `Now giving people bad advices to earn more`,
+          imageUrl: 'https://media.giphy.com/media/r95kAgBEzeapljl1ft/giphy.gif',
+          imageWidth: 350,
+          imageAlt: 'Custom image',
+          backdrop: `
+            rgba(0,0,123,0.4)
+            url("/nyan-cat.gif")
+            left top
+            no-repeat
+          `
+        });
+      })
+      .catch((e: any) => {
+        console.error(e);
+        Toast.fire({
+          icon: 'error',
+          title: `😭 Fail to Buy Name.`
+        });
+      });
+  }
+
   async buyPuff(opt: {
     activeTeamIndex: number;
     puffsToETH: number;
@@ -286,6 +319,22 @@ export default class GameHelper {
       })
       .then(async (events: any) => {
         console.log('✅ onEndRound!', events);
+      });
+
+    await this.fomoXdContract
+      .getPastEvents('onNewName', {
+        filter: { playerAddress: this.account },
+        fromBlock: 0,
+        toBlock: 'latest'
+      })
+      .then(async (events: any) => {
+        const playerNames: string[] = [];
+        for (const e of events) {
+          playerNames.push(Web3Lib.utils.toAscii(e.returnValues.playerName));
+        }
+        this.setPlayerData((last: any) => {
+          return { ...last, playerNames };
+        });
       });
 
     const onWithdraw = this.fomoXdContract.events.onWithdraw().on('data', (event: any) => {

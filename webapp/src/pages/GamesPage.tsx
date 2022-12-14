@@ -36,7 +36,8 @@ const GamesPage = (props: any) => {
     setPuffsToETH,
     playerData,
     withdraw,
-    roundId
+    roundId,
+    buyName
   } = game;
 
   const teams = JSON.parse(localStorage.getItem('teams') as string);
@@ -103,6 +104,8 @@ const GamesPage = (props: any) => {
               setWantXPuffs={setWantXPuffs}
               puffsToETH={puffsToETH}
               setPuffsToETH={setPuffsToETH}
+              buyName={buyName}
+              params={params}
             />
           </div>
         </div>

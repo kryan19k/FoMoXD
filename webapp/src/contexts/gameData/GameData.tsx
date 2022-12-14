@@ -10,6 +10,7 @@ interface PlayerData {
   generalVault: number;
   affiliateVault: number;
   ntfs: [];
+  playerNames: string[];
 }
 
 interface RoundData {
@@ -44,6 +45,7 @@ export const GameContext = createContext({
   fetchNewRound: (num: number) => {},
   playerData: { nfts: [] },
   withdraw: () => {},
+  buyName: () => {},
   foMoERC721: {}
 });
 
@@ -69,7 +71,8 @@ export default function GameProvider(props: any) {
     winningVault: 0,
     generalVault: 0,
     affiliateVault: 0,
-    ntfs: []
+    ntfs: [],
+    playerNames: []
   });
   const [activeTeamIndex, setActiveTeamIndex] = useState(0);
 
@@ -124,6 +127,9 @@ export default function GameProvider(props: any) {
     fetchNewRound: (rId: number) => {
       helper.fetchNewRound(rId);
     },
+    buyName: (name: string, aff?: { address?: string; name?: string; id?: number }) => {
+      helper.buyName(name, aff);
+    },
     playerData,
     foMoERC721
   };
@@ -134,10 +140,3 @@ export default function GameProvider(props: any) {
 export function useGameData() {
   return useContext(GameContext);
 }
-
-// fomoXdContract.filters.Transfer(account, null);
-// const fromMe = fomoXdContract.filters.Transfer(account, null);
-// provider.on(fromMe, (from: string, to: string, amount: any, event: any) => {
-//   console.log('Transfer|sent', { from, to, amount, event });
-//   // queryTokenBalance(window)
-// });

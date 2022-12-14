@@ -249,12 +249,8 @@ contract FoMoXD is FXDevents {
             _affCode,
             _all
         );
-        console.log("_isNewPlayer~~~", _isNewPlayer);
-        console.log("_affID~~~", _affID);
 
         uint256 _pID = playerIDxAddr_[_addr];
-        console.log("_affIDewfwefewf~~~", _affID);
-        console.log("_affIDefwefwefwefwefjoij~~~", player_[_affID].addr);
 
         // fire event
         emit onNewName(
