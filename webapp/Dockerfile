@@ -6,8 +6,8 @@ WORKDIR /app
 
 COPY package.json .
 
-# Install dependencies (npm ci makes sure the exact versions in the lockfile gets installed)
-RUN npm ci
+# Install dependencies
+RUN npm i
 
 # Copy app files
 COPY . .

@@ -1,27 +1,55 @@
-# 🧁 FoMoXD - Blockchain Games
-
-## What is FoMoXD
-#### Dapp Lottery Ponzi Game
-
-- Integrated profit-sharing token, NFTs, DAO, multi-sig wallet
+# 🧁 FoMoXD - Blockchain Dapp
+## A Lottery Ponzi Game
+#### Rules
 - Winner is the last person to purchase Puffs — a lottery ticket — using ETH before the countdown timer runs down to zero.
 - During games every player has chance to get ETH, NFT airdrops
+## Feature
+- Integrated Profit-sharing token, NFTs, DAO, Multi-sig wallet
+- Utilizes the hardhat framework for development and testing
 
-## Steps for test
+## Steps for E2E test
 
 - Run the hardhat node
+
+```bash
+npx hardhat node
+```
 - Add the test network and account to Metamak
-- Deploy contracts with Hardhat
+  - Import hardhat test private key
+  - Import hardhat network
+
+
+- Deploy contracts with Hardhat 
+
+```bash
+npm run deploy
+```
 - Update Contract Address in config file
+
+```bash
+vi webapp/.env
+# Add the address
+REACT_APP_FOMO_CONTRACT_ADDRESS=YOUR_FOMO_CONTRACT_ADDRESS
+REACT_APP_FOMOERC721_CONTRACT_ADDRESS=YOUR_FOMO_NFT_CONTRACT_ADDRESS
+```
 - Run the web server with docker
 
-```
+```bash
 docker build -t fomoxd . --no-cache
 docker run -p 3000:3000 fomoxd
 ```
 
-## Game Flow
+## Steps for Integration Test
 
+```bash
+cd chain
+npm i 
+npx hardhat node
+npm run test
+
+```
+
+## Game Flow
 
 ```mermaid
 stateDiagram
@@ -42,15 +70,6 @@ stateDiagram
     NoTime⏰  --> nftWinner👨🏻‍🎨: reveal mystery NFTS 🖼️
 ```
 
-### User Vault
-
-```mermaid
-flowchart LR
-    1[User Vault] --o 2[Winnings vault]
-    1 --o 3[General vault]
-    1 --o 4[Affiliate vault]
-    
-```
 
 ## Smart Contract Modules
 
@@ -92,6 +111,27 @@ flowchart LR
 5. Devide: Responsible for calculating and distributing profits to the holders of the tokens
 6. Oracle: Obtaining a random number from an Oracle. Once the random number has been generated, the game then use it to determine whether or not a player is a airdrop winner.
 
+# Profit-sharing System
+
+### Internal
+
+### User Vault
+
+- Team Vault
+- Affiliate Vault
+- Winning Vault
+
+```mermaid
+flowchart LR
+    1[User Vault] --o 2[Winnings vault]
+    1 --o 3[General vault]
+    1 --o 4[Affiliate vault]
+    
+```
+
+### External
+- PXD
+- Community
 
 
 # Assets Credits
