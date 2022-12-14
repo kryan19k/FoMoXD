@@ -129,10 +129,9 @@ export default class GameHelper {
   async buyName(name: string, aff?: { address?: string; name?: string; id?: number }) {
     const affcode = aff?.id || 0;
     await this.fomoXdContract.methods
-      ?.registerNameXID(name, affcode, true)
+      ?.registerNameXID(name.trim(), affcode, true)
       .send({ from: this.account, value: this.web3.utils.toWei('1', 'gwei') })
       .then((receipt: any) => {
-        console.log(receipt);
         Swal.fire({
           title: `You have new name!`,
           confirmButtonText: 'OK',
@@ -148,6 +147,10 @@ export default class GameHelper {
             left top
             no-repeat
           `
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            window.location.reload();
+          }
         });
       })
       .catch((e: any) => {
@@ -171,7 +174,10 @@ export default class GameHelper {
     } else if (aff?.address) {
       buyX = this.fomoXdContract.methods?.buyPuffXAddr(activeTeamIndex - 1, aff?.address);
     } else if (aff?.name) {
-      buyX = this.fomoXdContract.methods?.buyXname(activeTeamIndex - 1, aff?.name);
+      buyX = this.fomoXdContract.methods?.buyXname(
+        activeTeamIndex - 1,
+        Web3Lib.utils.asciiToHex(aff?.name)
+      );
     } else {
       buyX = this.fomoXdContract.methods?.buyXid(activeTeamIndex - 1, 0);
     }
@@ -188,7 +194,7 @@ export default class GameHelper {
             padding: '3em',
             color: '#716add',
             text: 'You Got an NFT',
-            imageUrl: 'https://media.giphy.com/media/oHB0VofpRubjW/giphy.gif',
+            imageUrl: 'https://media.giphy.com/media/dvBgr7pA6FTJOMOALY/giphy.gif',
             imageWidth: 350,
             imageAlt: 'Custom image',
             backdrop: `
@@ -272,21 +278,13 @@ export default class GameHelper {
           this.setPlayerData({ ...newPlayerRoundData, ...newPlayerData, nfts: lastNfts });
         }
       });
+    this.setPlayerData({ ...newPlayerRoundData, ...newPlayerData });
     return this.playerId;
   }
 
   async fetchNewRound(_roundId: number) {
     const r = await this.fomoXdContract?.methods?.roundData_(_roundId).call();
     const playerId = await this.fetchPlayerRoundData(_roundId);
-    console.log(
-      'fetchNewRound~',
-      _roundId,
-      r,
-      this.account,
-      new Date(r.endTime * 1000).toLocaleTimeString(),
-      r.winnerId,
-      playerId === r.winnerId
-    );
     this.setRoundData({ ...r, isWinner: playerId === r.winnerId });
     this.setEndTime(r.endTime * 1000);
   }
@@ -299,10 +297,6 @@ export default class GameHelper {
       .allEvents({
         // filter: {
         //   from: [
-        //     // 🥵 it doesn't work...
-        //     '0x00000000AE347930bD1E7B0F35588b92280f9e75',
-        //     '0x8EB871bbB6F754a04bCa23881A7D25A30aAD3f23',
-        //     '0xc2A856c3afF2110c1171B8f942256d40E980C726'
         //   ]
         // }
       })
@@ -349,47 +343,40 @@ export default class GameHelper {
           )} ETH from FoMo.`
         });
       }
+    });
 
-      // this.foMoERC721.events
-      //   .allEvents(
-      //     {
-      //       filter: { to: this.account },
-      //       fromBlock: 0,
-      //       toBlock: 'latest'
-      //     },
-      //     function (error: Error, events: any) {
-      //       console.log('events~~~~', events);
-      //     }
-      //   )
-      //   .then(function (events: any) {
-      //     console.log('getPastEvents Err!', events);
-      //   });
+    this.fomoXdContract.events.onAffiliatePayout().on('data', (event: any) => {
+      if (event?.returnValues?.affiliateAddress == this.account) {
+        Swal.fire({
+          title: `Congrats!`,
+          confirmButtonText: 'OK',
+          padding: '3em',
+          color: '#716add',
+          text: `You won affiliate reward!`,
+          imageUrl: 'https://media.giphy.com/media/SsTcO55LJDBsI/giphy.gif',
+          imageWidth: 350,
+          imageAlt: 'Custom image',
+          backdrop: `
+            rgba(0,0,123,0.4)
+            url("/nyan-cat.gif")
+            left top
+            no-repeat
+          `
+        });
+      }
     });
 
     const onEndRound = this.fomoXdContract.events.onEndRound().on('data', (event: any) => {
       const { roundId, winnerId, winnerTeamId, endTime, generalShare, winnerShare } =
         event?.returnValues;
-
-      console.log(
-        'onEndRound~~~~',
-        roundId,
-        winnerId,
-        winnerTeamId,
-        endTime,
-        generalShare,
-        winnerShare
-      );
-
       if (winnerId == this.playerId) {
         Swal.fire({
           title: `You won the game!`,
-          showCancelButton: true,
           confirmButtonText: 'OK',
-          cancelButtonText: 'No thx.',
           padding: '3em',
           color: '#716add',
-          text: `You eon ${Web3Lib.utils.fromWei(winnerShare, 'ether')}`,
-          imageUrl: 'https://media.giphy.com/media/r95kAgBEzeapljl1ft/giphy.gif',
+          text: `You won ${Web3Lib.utils.fromWei(winnerShare, 'ether')}`,
+          imageUrl: 'https://media.giphy.com/media/RLVHPJJv7jY1q/giphy.gif',
           imageWidth: 350,
           imageAlt: 'Custom image',
           backdrop: `
@@ -400,19 +387,17 @@ export default class GameHelper {
           `
         }).then(async (result) => {
           if (result.isConfirmed) {
-            window.location.pathname = '/';
+            window.location.reload();
           }
         });
       } else {
         Swal.fire({
           title: `Game Over!`,
-          showCancelButton: true,
           confirmButtonText: 'OK',
-          cancelButtonText: 'No thx.',
           padding: '3em',
           color: '#716add',
           text: `Winner won ${Web3Lib.utils.fromWei(winnerShare, 'ether')}`,
-          imageUrl: 'https://media.giphy.com/media/r95kAgBEzeapljl1ft/giphy.gif',
+          imageUrl: 'https://media.giphy.com/media/7Uj0tJ6r2CeOs/giphy.gif',
           imageWidth: 350,
           imageAlt: 'Custom image',
           backdrop: `
@@ -423,7 +408,7 @@ export default class GameHelper {
           `
         }).then(async (result) => {
           if (result.isConfirmed) {
-            window.location.pathname = '/';
+            window.location.reload();
           }
         });
       }

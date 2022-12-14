@@ -5,7 +5,8 @@ import "./interface/ICommunity.sol";
 import "./interface/IPlayerBookReceiver.sol";
 
 import "./library/NameFilter.sol";
-import "hardhat/console.sol";
+
+// import "hardhat/console.sol";
 
 contract PlayerBook {
     /* ------------------------------------------------------ */

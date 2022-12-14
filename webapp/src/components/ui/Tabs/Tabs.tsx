@@ -245,7 +245,6 @@ const Tabs = (props: any) => {
               <button
                 className="tab-button btn"
                 onClick={async () => {
-                  console.log('params???', params);
                   const { value: name } = await Swal.fire({
                     title: 'Enter your referel name',
                     input: 'text',

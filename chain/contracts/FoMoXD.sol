@@ -15,7 +15,7 @@ import "./library/NameFilter.sol";
 
 import "./FXDevents.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract FoMoXD is FXDevents {
     /* ------------------------------------------------------ */
@@ -264,7 +264,6 @@ contract FoMoXD is FXDevents {
             _paid,
             block.timestamp
         );
-        console.log(">>>>>>");
     }
 
     /**

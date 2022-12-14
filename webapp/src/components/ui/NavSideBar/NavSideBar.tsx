@@ -118,14 +118,14 @@ const NavSideBar = (props: any) => {
             <Link
               style={{ textDecoration: 'none' }}
               className="nav-bar-icon"
-              to="/exitScam"
+              to="/exit-scam"
               onClick={onClickPickRoundHandler}>
               <h5>🎰</h5>
             </Link>
             <Link
               style={{ textDecoration: 'none' }}
               className="nav-bar-icon"
-              to="/exitScam"
+              to="/exit-scam"
               onClick={onClickMetaMaskHandler}>
               <h5>{connected ? '🦊' : '🫥'}</h5>
             </Link>
