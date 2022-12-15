@@ -375,7 +375,11 @@ export default class GameHelper {
 
     this.fomoXdContract.events.onBuyPuff().on('data', async (event: any) => {
       await this.fetchNewRound(this.roundId);
-      if (event?.returnValues?.affId == this.playerId) {
+      if (
+        event?.returnValues?.affId == this.playerId &&
+        this.playerId !== 0 &&
+        event?.returnValues?.affId !== '0'
+      ) {
         Swal.fire({
           title: `Congrats!`,
           confirmButtonText: 'OK',
