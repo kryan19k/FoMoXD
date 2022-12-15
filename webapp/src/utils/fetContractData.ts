@@ -206,6 +206,8 @@ export default class GameHelper {
           }).then(async (result) => {
             if (result.isConfirmed) {
               window.location.pathname = '/nfts';
+            } else {
+              await this.fetchNewRound(this.roundId);
             }
           });
         }
@@ -235,7 +237,7 @@ export default class GameHelper {
     await this.fomoXdContract.methods
       ?.withdraw()
       .send({ from: this.account })
-      .then(function (receipt: any) {
+      .then(async (receipt: any) => {
         Toast.fire({
           icon: 'success',
           title: `💰 Success to withdraw ${Web3Lib.utils.fromWei(
@@ -243,6 +245,7 @@ export default class GameHelper {
             'ether'
           )} ETH.`
         });
+        await this.fetchNewRound(this.roundId);
       })
       .catch((e: any) => {
         console.error(e);
@@ -345,8 +348,34 @@ export default class GameHelper {
       }
     });
 
-    this.fomoXdContract.events.onAffiliatePayout().on('data', (event: any) => {
-      if (event?.returnValues?.affiliateAddress == this.account) {
+    // this.fomoXdContract.events.onAffiliatePayout().on('data', (event: any) => {
+    //   if (event?.returnValues?.affiliateAddress == this.account) {
+    //     Swal.fire({
+    //       title: `Congrats!`,
+    //       confirmButtonText: 'OK',
+    //       padding: '3em',
+    //       color: '#716add',
+    //       text: `You won affiliate reward!`,
+    //       imageUrl: 'https://media.giphy.com/media/SsTcO55LJDBsI/giphy.gif',
+    //       imageWidth: 350,
+    //       imageAlt: 'Custom image',
+    //       backdrop: `
+    //         rgba(0,0,123,0.4)
+    //         url("/nyan-cat.gif")
+    //         left top
+    //         no-repeat
+    //       `
+    //     }).then(async (result) => {
+    //       if (result.isConfirmed) {
+    //         window.location.reload();
+    //       }
+    //     });
+    //   }
+    // });
+
+    this.fomoXdContract.events.onBuyPuff().on('data', async (event: any) => {
+      await this.fetchNewRound(this.roundId);
+      if (event?.returnValues?.affId == this.playerId) {
         Swal.fire({
           title: `Congrats!`,
           confirmButtonText: 'OK',
@@ -364,9 +393,18 @@ export default class GameHelper {
           `
         }).then(async (result) => {
           if (result.isConfirmed) {
-            window.location.reload();
+            await this.fetchNewRound(this.roundId);
           }
         });
+      } else if (event?.returnValues?.playerAddress != this.account) {
+        Toast.fire({
+          icon: 'success',
+          title: `🧁 PlayerId: ${event?.returnValues?.playerId} just buy ${Web3Lib.utils.fromWei(
+            event?.returnValues?.puffssBought,
+            'ether'
+          )} Puffs.`
+        });
+        await this.fetchNewRound(this.roundId);
       }
     });
 

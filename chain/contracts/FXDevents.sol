@@ -34,7 +34,8 @@ contract FXDevents {
         uint256 P3DShare,
         uint256 generalShare,
         uint256 airDropPotShare,
-        uint256 potShare
+        uint256 potShare,
+        uint256 indexed affId
     );
 
     event onEndRound(
@@ -55,7 +56,7 @@ contract FXDevents {
 
     event onAffiliatePayout(
         uint256 indexed affiliateID,
-        address affiliateAddress,
+        address indexedaffiliateAddress,
         bytes32 affiliateName,
         uint256 indexed roundID,
         uint256 indexed buyerID,

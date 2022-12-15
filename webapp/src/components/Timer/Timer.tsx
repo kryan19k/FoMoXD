@@ -73,7 +73,11 @@ const ShowCounter = (props: any) => {
 
 const CountdownTimer = (props: any) => {
   const [days, hours, minutes, seconds] = useCountdown(props.targetDate);
-  if (props.isGameEnd) {
+  if (props.targetDate > 0 && seconds > 0) {
+    return <ShowCounter days={days} hours={hours} minutes={minutes} seconds={seconds} />;
+  } else if (props.targetDate <= 0) {
+    return <ExpiredNotice getTime={false} isGameEnd={props.isGameEnd} nftsNum={props.nftsNum} />;
+  } else if (props.isGameEnd) {
     return (
       <ExpiredNotice
         getTime={true}
@@ -83,15 +87,8 @@ const CountdownTimer = (props: any) => {
         nftsNum={props.nftsNum}
       />
     );
-  } else {
-    if (props.targetDate > 0 && minutes > 0) {
-      return <ShowCounter days={days} hours={hours} minutes={minutes} seconds={seconds} />;
-    } else if (props.targetDate <= 0) {
-      return <ExpiredNotice getTime={false} isGameEnd={props.isGameEnd} nftsNum={props.nftsNum} />;
-    } else {
-      return <ExpiredNotice getTime={true} isGameEnd={props.isGameEnd} nftsNum={props.nftsNum} />;
-    }
   }
+  return <ExpiredNotice getTime={true} isGameEnd={props.isGameEnd} nftsNum={props.nftsNum} />;
 };
 
 export default CountdownTimer;

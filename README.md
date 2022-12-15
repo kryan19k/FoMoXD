@@ -55,22 +55,25 @@ npm run test
 ```mermaid
 stateDiagram
     direction LR
-    [*] --> Player: Purchase puffs 🧁
-    state Player {
+    [*] --> Have_Time: Purchase puffs 🧁
+    state Have_Time {
+      Player_ --> NFT_Winner: Airdrop NFT reward 🖼️
+      Player_ --> ETH_Winner: Airdrop ETH reward 🪙
+      Player_ --> Affiliate_Winner: Get affiliate reward 👥
+    }
+    Have_Time --> ⏱️Add_Time
+```
+
+```mermaid
+stateDiagram
       direction LR
-      player --> nftWinner: Airdrop NFT 🖼️
-      player --> ethWinner: Airdrop ETH 🪙
-      player --> Affiliate: Get affiliate ETH 👥
+    [*] --> No_Time: Time's Up ⏱️
+    state No_Time{
+      Player_  --> GeneralPotWinner: Team share 🧑‍🤝‍🧑
+      Player_  --> PickWinner: Final pot winner 💰
+      Player_  --> NFTWinner: Reveal mystery NFTS 🖼️
     }
-    Player --> NoTime
-    Player --> AddTime
-    state NoTime{
-      NoTime⏰  --> GameOver🤡: Nothing but puffs 🧁
-      NoTime⏰  --> PickWinner: Final pot winner 💰
-      NoTime⏰  --> NFTWinner👨🏻‍🎨: Reveal mystery NFTS 🖼️
-    }
-    AddTime
-    NoTime --> [*]
+    No_Time --> 🏁New_Round
 ```
 
 

@@ -748,7 +748,8 @@ contract FoMoXD is FXDevents {
             _p3dShare,
             _generalShare,
             _airShare,
-            _potShare
+            _potShare,
+            _affID
         );
     }
 
