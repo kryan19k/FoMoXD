@@ -7,10 +7,11 @@ export const SoundContext = createContext({
   isPlaying: false,
   setIsPlaying: (newState: boolean) => {}
 });
+const isMute = localStorage.getItem('isMute') ? true : false;
 
 export default function SoundProvider(props: any) {
   const { children } = props;
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [isPlaying, setIsPlaying] = useState<boolean>(!isMute);
   const value = { isPlaying, setIsPlaying };
   return <SoundContext.Provider value={value}>{children}</SoundContext.Provider>;
 }

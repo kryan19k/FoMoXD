@@ -46,10 +46,10 @@ contract FoMoXD is FXDevents {
     uint256 public constant wholePuffQty_ = 1000000000000000000;
     uint256 public constant minETHAllowed_ = 1000000000; // 1 Gwei
     /* --------------------- Round Timer -------------------- */
-    uint256 public constant roundInitTime_ = 5 minutes; // round timer starts at this
-    uint256 public constant roundIncTime_ = 30 seconds; // every full key purchased adds this much to the timer
-    uint256 public constant roundMaxTime_ = 5 minutes; // max length a round timer can be
-    uint256 public roundGapTime_ = 1 minutes;
+    uint256 public constant roundInitTime_ = 3 minutes; // round timer starts at this
+    uint256 public constant roundIncTime_ = 20 seconds; // every full key purchased adds this much to the timer
+    uint256 public constant roundMaxTime_ = 3 minutes; // max length a round timer can be
+    uint256 public roundGapTime_ = 20 seconds;
     /* ------------------------------------------------------ */
     /*                         STORAGE                        */
     /* ------------------------------------------------------ */

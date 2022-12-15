@@ -26,6 +26,11 @@ const NavSideBar = (props: any) => {
 
   const onClickSoundHandler = (e: React.MouseEvent) => {
     soundContext.setIsPlaying(!soundContext.isPlaying);
+    if (localStorage.getItem('isMute')) {
+      localStorage.removeItem('isMute');
+    } else {
+      localStorage.setItem('isMute', 'true');
+    }
     Toast.fire({
       icon: 'success',
       title: `${!soundContext.isPlaying ? '🎉 Party Time' : '🤫 Shh...'}`

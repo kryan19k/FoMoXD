@@ -362,6 +362,10 @@ export default class GameHelper {
             left top
             no-repeat
           `
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            window.location.reload();
+          }
         });
       }
     });

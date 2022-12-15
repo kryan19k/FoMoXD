@@ -179,7 +179,7 @@ const Tabs = (props: any) => {
               {/* 總收益 */}
               <BaseInput
                 label="gan"
-                text="Total Gains"
+                text="Total Vault"
                 value={Web3.utils.fromWei(
                   (+playerData.generalVault + +playerData.winningVault).toString(),
                   'ether'
