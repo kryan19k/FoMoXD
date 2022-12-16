@@ -73,7 +73,7 @@ const Tabs = (props: any) => {
           <div className={`panel ${checkActive(1, 'active')}`}>
             <p>roundId:{roundId}</p>
             <p>
-              Purchases of .1 ETH or more have a 1% chance to win some of the 0 BNB airdrop pot,
+              Purchases of .1 ETH or more have a 1% chance to win some of the airdrop pot & NFT,
               instantly!
             </p>
             <div className="input-group">

@@ -135,10 +135,16 @@ flowchart LR
     
 ```
 
+
 ### External
 - PXD
 - Community
 
+# Todo
+
+[ ] Decentralize Governance system
+
+[ ] Profit-sharing Token
 
 # Credits
 - [Style Guide](https://docs.soliditylang.org/en/v0.8.17/common-patterns.html)
