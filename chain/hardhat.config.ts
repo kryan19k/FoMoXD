@@ -11,17 +11,17 @@ const config: HardhatUserConfig = {
   solidity: "0.8.17",
   defaultNetwork: "localhost",
   networks: {
-    // goerli: {
-    //   allowUnlimitedContractSize: true,
-    //   url: API_URL,
-    //   accounts: [PRIVATE_KEY as string],
-    // },
+    goerli: {
+      allowUnlimitedContractSize: true,
+      url: API_URL,
+      accounts: [PRIVATE_KEY as string],
+    },
     hardhat: {
       allowUnlimitedContractSize: true,
-      // forking: {
-      //   url: `https://eth-mainnet.g.alchemy.com/v2/${API_KEY}`,
-      //   enabled: true,
-      // },
+      forking: {
+        url: `https://eth-mainnet.g.alchemy.com/v2/${API_KEY}`,
+        enabled: true,
+      },
     },
   },
   etherscan: {
