@@ -1,5 +1,7 @@
 # 🧁 FoMoXD - Blockchain Dapp
 ## A Lottery Ponzi Game
+
+<img src="./docs/FomoXD.gif"></img>
 #### Rules
 - Winner is the last person to purchase Puffs — a lottery ticket — using ETH before the countdown timer runs down to zero.
 - During games every player has chance to get ETH, NFT airdrops

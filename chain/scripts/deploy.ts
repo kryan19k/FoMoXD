@@ -74,7 +74,7 @@ async function main() {
   await foMoERC721.setFoMoGame(foMoXD.address);
   await playerBook.addGame(foMoXD.address, "FoMoXDTest");
   // TODO: Just For testing
-  // await foMoXD.activate();
+  await foMoXD.activate();
 }
 
 // We recommend this pattern to be able to use async/await everywhere
@@ -84,4 +84,9 @@ main().catch((error) => {
   process.exitCode = 1;
 });
 
-// const fomo = await ethers.getContractAt("FoMoXD", usdcAddress);
+// await (
+//   await ethers.getContractAt(
+//     "FoMoXD",
+//     ""
+//   )
+// ).activate();

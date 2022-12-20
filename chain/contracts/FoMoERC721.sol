@@ -82,11 +82,6 @@ contract FoMoERC721 is
         _;
     }
 
-    modifier onlyOwner() {
-        require(owner() == msg.sender, "not owner");
-        _;
-    }
-
     /* ------------------------------------------------------ */
     /*                        FUNCTIONS                       */
     /* ------------------------------------------------------ */
