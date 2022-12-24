@@ -1,5 +1,5 @@
 {
-  "name": "iot-device-simulator-client",
+  "name": "@fomoxd/webapp",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

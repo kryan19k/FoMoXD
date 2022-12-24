@@ -1,5 +1,5 @@
 {
-  "name": "fomoxd",
+  "name": "@fomoxd/chain",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",

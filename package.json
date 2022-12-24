@@ -1,0 +1,15 @@
+{
+  "name": "fomoxd",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "./chain",
+    "./webapp"
+  ],
+  "dependencies": {
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "prettier": "^2.8.0"
+  }
+}
